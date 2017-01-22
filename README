@@ -1,0 +1,9 @@
+To compile :
+make
+To run:
+./game
+
+Libraries used:
+OpenGL
+Libao
+pthread
