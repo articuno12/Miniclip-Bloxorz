@@ -8,7 +8,6 @@
 #include <time.h>
 #include <stdlib.h>
 
-// #include <GL/glew.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <SOIL/SOIL.h>
@@ -20,6 +19,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 using namespace std;
+
+#define pb push_back
+#define mp make_pair
 
 struct VAO {
     GLuint VertexArrayID;
@@ -84,11 +86,18 @@ struct game_object
 
 GLuint programID, waterProgramID, fontProgramID, textureProgramID;
 double last_update_time, current_time;
-double camera_radius=12;
+float camera_radius=12;
 float rectangle_rotation = 0;
 game_object Camera;
+map<string,GLuint> Texture;
+vector<game_object> normal_floor,button_floor;
+vector<vector<game_object> > hidden_floor;
+map<pair<int,int> , int> buttons;
+int floor_width,floor_length;
+float tilewidth=2;float tileheight=0.2;float tilelength=2;
 /* Function to load Shaders - Use it as it is */
-GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path) {
+GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path)
+{
 
 	// Create the shaders
 	GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
@@ -433,53 +442,8 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
       case 'n':
       set_camera_radius(-1);
       break;
-  //   case 'a':
-	// rect_pos.x -= 0.1;
-	// break;
-  //   case 'd':
-	// rect_pos.x += 0.1;
-	// break;
-  //   case 'w':
-	// rect_pos.y += 0.1;
-	// break;
-  //   case 's':
-	// rect_pos.y -= 0.1;
-	// break;
-  //   case 'r':
-	// rect_pos.z -= 0.1;
-	// break;
-  //   case 'f':
-	// rect_pos.z += 0.1;
-	// break;
-  //   case 'e':
-	// rectangle_rotation += 1;
-	// break;
-  //   case 'j':
-	// floor_pos.x -= 0.1;
-	// break;
-  //   case 'l':
-	// floor_pos.x += 0.1;
-	// break;
-  //   case 'i':
-	// floor_pos.y += 0.1;
-	// break;
-  //   case 'k':
-	// floor_pos.y -= 0.1;
-	// break;
-  //   case 'y':
-	// floor_pos.z -= 0.1;
-	// break;
-  //   case 'h':
-	// floor_pos.z += 0.1;
-	// break;
-  //   case 'g':
-	// floor_rel ^= 1;
-	// break;
-  //   case ' ':
-	// do_rot ^= 1;
-	// break;
-  //   default:
-	// break;
+      default:
+	       break;
   }
 }
 
@@ -537,7 +501,7 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
 VAO *rectangle, *floor_vao;
 
 // Creates the rectangle object used in this sample code
-void createRectangle (GLuint textureID)
+VAO* createRectangle (GLuint textureID)
 {
     // GL3 accepts only Triangles. Quads are not supported
     static const GLfloat vertex_buffer_data [] = {
@@ -672,38 +636,101 @@ void createRectangle (GLuint textureID)
     };
 
     // create3DTexturedObject creates and returns a handle to a VAO that can be used later
-    rectangle = create3DTexturedObject(GL_TRIANGLES, 12*3, vertex_buffer_data, texture_buffer_data, textureID, GL_FILL);
+    return create3DTexturedObject(GL_TRIANGLES, 12*3, vertex_buffer_data, texture_buffer_data, textureID, GL_FILL);
 
     // create3DObject creates and returns a handle to a VAO that can be used later
     //rectangle = create3DObject(GL_TRIANGLES, 12*3, vertex_buffer_data, color_buffer_data, GL_FILL);
 }
-
-void createFloor ()
+game_object cuboid;
+void create_cuboid()
 {
-    // GL3 accepts only Triangles. Quads are not supported
-    static const GLfloat vertex_buffer_data [] = {
-	-2, -1, 2,
-	2, -1, 2,
-	-2, -1, -2,
-	-2, -1, -2,
-	2, -1, 2,
-	2, -1, -2,
-    };
-
-    static const GLfloat color_buffer_data [] = {
-	0.65, 0.165, 0.165,
-	0.65, 0.165, 0.165,
-	0.65, 0.165, 0.165,
-	0.65, 0.165, 0.165,
-	0.65, 0.165, 0.165,
-	0.65, 0.165, 0.165,
-    };
-
-    // create3DObject creates and returns a handle to a VAO that can be used later
-    floor_vao = create3DObject(GL_TRIANGLES, 2*3, vertex_buffer_data, color_buffer_data, GL_FILL);
+  cuboid.height=tilewidth+tilelength;
+  cuboid.length=tilelength;
+  cuboid.width=tilewidth;
+  cuboid.scale=glm::vec3(cuboid.width,cuboid.length,cuboid.height);
+  cuboid.up=glm::vec3(0,0,1);
+  cuboid.rotation_axis=glm::vec3(0,0,1);
+  cuboid.angle=glm::vec3(-1,0,0);
+  cuboid.center=glm::vec3(0,0,0);
+  cuboid.object=createRectangle(Texture["cuboid"]);
 }
-
-
+glm::mat4 Rotatecuboid(glm::vec3 X,glm::vec3 Y,glm::vec3 Z)
+{
+    glm::vec4 row1(X.x,X.y,X.z,0) ;
+    glm::vec4 row2(Y.x,Y.y,Y.z,0) ;
+    glm::vec4 row3(Z.x,Z.y,Z.z,0) ;
+    glm::vec4 row4(0,0,0,1) ;
+    return glm::mat4(row1,row2,row3,row4) ;
+}
+vector<vector<int> > read_floor(int level)
+{
+  string filename;
+  filename="Levels/" + to_string(level) + ".txt";
+  ifstream in(filename.c_str()) ;
+  int t=0;
+  if(!in.is_open())
+  {
+      cout<<"Unable to open Level file"<<endl ;
+      exit(0) ;
+  }
+  in>>floor_width>>floor_length;
+  vector<vector<int> > grid(floor_width);
+  for(int i=0;i<floor_width;++i)
+  {
+    for(int j=0;j<floor_length;++j)
+    {
+      in>>t;
+      grid[i].pb(t);
+      cout<<"im"<<endl;
+    }
+  }
+  in.close() ;
+  return grid;
+}
+void make_floor(int level)
+{
+  normal_floor.clear(),hidden_floor.clear(),button_floor.clear();
+  vector<vector<int> > floor_plan; floor_plan=read_floor(level);
+  float del=0.06;
+  int max_n=0;
+  for(auto &i:floor_plan)
+  {
+    for(auto &j:i) max_n=max(max_n,j);
+  }
+  //for hidden blocks numbering is 2n+1 so 2n+1/2 will give number.
+  hidden_floor.resize(max_n/2);
+  game_object block,hblock,bblock;
+  block.object=createRectangle(Texture["live_block"]);
+  block.width=tilewidth;block.height=tileheight;block.length=tilelength;
+  block.scale=glm::vec3(block.width-del,block.length-del,block.height);
+  block.rotation_axis=glm::vec3(0,0,1);
+  hblock.object=createRectangle(Texture["hidden_block"]);
+  bblock.object=createRectangle(Texture["button_block"]);
+  bblock.scale=hblock.scale=block.scale;
+  bblock.width=hblock.width=block.width;bblock.height=hblock.height=block.height;bblock.length=hblock.length=block.length;
+  for(int i=0;i<floor_width;++i)
+  {
+    for(int j=0;j<floor_length;++j)
+    {
+      if(floor_plan[i][j]==1)
+      {
+        block.center = glm::vec3((i - floor_width/2)*tilewidth,(j - floor_length/2)*tilelength, -(tilelength + tilewidth)/2 - tileheight/2) ;
+        normal_floor.pb(block);
+      }
+      else if(floor_plan[i][j]%2==0 && floor_plan[i][j]!=0)
+      {
+        bblock.center = glm::vec3((i - floor_width/2)*tilewidth,(j - floor_length/2)*tilelength, -(tilelength + tilewidth)/2 - tileheight/2) ;
+        button_floor.pb(bblock);
+        buttons[mp(i,j)] = floor_plan[i][j]/2-1;
+      }
+      else if(floor_plan[i][j]%2==1)
+      {
+        hblock.center = glm::vec3((i - floor_width/2)*tilewidth,(j - floor_length/2)*tilelength, -(tilelength + tilewidth)/2 - tileheight/2) ;
+        hidden_floor[floor_plan[i][j]/2-1].pb(hblock);
+      }
+    }
+  }
+}
 /* Render the scene with openGL */
 /* Edit this function according to your assignment */
 void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int doV, int doP)
@@ -720,7 +747,7 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 
     glm::mat4 VP;
 
-	VP = Matrices.projection * Matrices.view;
+	   VP = Matrices.projection * Matrices.view;
 
 
     // Send our transformation to the currently bound shader, in the "MVP" uniform
@@ -733,7 +760,7 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
     glUseProgram(textureProgramID);
   	glEnable(GL_BLEND);
   	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-      glUniform1i(glGetUniformLocation(textureProgramID, "texSampler"), 0);
+    glUniform1i(glGetUniformLocation(textureProgramID, "texSampler"), 0);
     // Load identity to model matrix
     Matrices.model = glm::mat4(1.0f);
     glm::mat4 translateRectangle = glm::translate (glm::vec3(0, 0, 0));        // glTranslatef
@@ -743,11 +770,27 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 
   	// Copy MVP to texture shaders
   	glUniformMatrix4fv(Matrices.TexMatrixID, 1, GL_FALSE, &MVP[0][0]);
-
-  	// Set the texture sampler to access Texture0 memory
-
-  	// draw3DObject draws the VAO given to it using current MVP matrix
-  	draw3DTexturedObject(rectangle);
+    //cout<<"Done till here"<<endl ;
+    for(auto &it:normal_floor)
+    {
+        Matrices.model = glm::translate(it.center) * glm::scale(it.scale);
+        MVP = VP * Matrices.model;
+        glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+        draw3DTexturedObject(it.object);
+    }
+    for(auto &it:button_floor)
+    {
+        Matrices.model = glm::translate(it.center) * glm::scale(it.scale);
+        MVP = VP * Matrices.model;
+        glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+        draw3DTexturedObject(it.object);
+    }
+    //drawing cuboid
+    Matrices.model = Rotatecuboid(cuboid.angle,normalize(cross(cuboid.up,cuboid.angle)),cuboid.up) * glm::scale(cuboid.scale);
+       Matrices.model = glm::translate(cuboid.center)* Matrices.model ;
+       MVP = VP * Matrices.model;
+       glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+       draw3DTexturedObject(cuboid.object);
 }
 
 /* Initialise glfw window, I/O callbacks and the renderer to use */
@@ -784,7 +827,13 @@ GLFWwindow* initGLFW (int width, int height){
     glfwSetScrollCallback(window, mousescroll); // mouse scroll
     return window;
 }
-
+void set_textures()
+{
+  Texture["live_block"]=createTexture("Images/live_block.jpg");
+  Texture["hidden_block"]=createTexture("Images/hidden_block.jpg");
+  Texture["button_block"]=createTexture("Images/button_block.jpg");
+  Texture["cuboid"]=createTexture("Images/middle.png");
+}
 /* Initialize the OpenGL rendering properties */
 /* Add all the models to be created here */
 void initGL (GLFWwindow* window, int width, int height)
@@ -795,14 +844,14 @@ void initGL (GLFWwindow* window, int width, int height)
     	textureProgramID = LoadShaders( "TextureRender.vert", "TextureRender.frag" );
     	// Get a handle for our "MVP" uniform
     	Matrices.TexMatrixID = glGetUniformLocation(textureProgramID, "MVP");
-
+      set_textures();
 
 
         GLint textureID5 = createTexture("Images/middle.jpg");
         createRectangle (textureID5);
 
-
-
+        make_floor(1);
+        create_cuboid();
         // Create and compile our GLSL program from the shaders
     	programID = LoadShaders( "shader.vert", "shader.frag" );
     	waterProgramID = LoadShaders ( "watershader.vert", "watershader.frag");
@@ -840,13 +889,9 @@ int main (int argc, char** argv)
     GLFWwindow* window = initGLFW(width, height);
 
     initGL (window, width, height);
-
     last_update_time = glfwGetTime();
     /* Draw in loop */
     while (!glfwWindowShouldClose(window)) {
-
-	// clear the color and depth in the frame buffer
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // OpenGL Draw commands
 	current_time = glfwGetTime();
@@ -855,7 +900,7 @@ int main (int argc, char** argv)
 	//if(camera_rotation_angle > 720)
 	  //  camera_rotation_angle -= 720;
 	last_update_time = current_time;
-draw(window, 0, 0, 0.5, 0.5, 1, 1, 1);
+  draw(window, 0, 0, 1, 1, 1, 1, 1);
 
         // Swap Frame Buffer in double buffering
         glfwSwapBuffers(window);
