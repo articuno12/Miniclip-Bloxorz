@@ -439,6 +439,12 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 						case GLFW_KEY_LEFT:
 										if(!rotate_block_h && !rotate_block_y) rotate_block_h=1,rotate_block_d=-1;
 										break;
+						case GLFW_KEY_UP:
+						if(!rotate_block_h && !rotate_block_y) rotate_block_y=1,rotate_block_d=1;
+						break;
+						case GLFW_KEY_DOWN:
+						if(!rotate_block_h && !rotate_block_y) rotate_block_y=1,rotate_block_d=-1;
+						break;
 						default:
 								break;
 				}
@@ -448,12 +454,7 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 						case GLFW_KEY_ESCAPE:
 								quit(window);
 								break;
-								case GLFW_KEY_RIGHT:
-											if(!rotate_block_h && !rotate_block_y) rotate_block_h=1,rotate_block_d=1;
-											break;
-								case GLFW_KEY_LEFT:
-												if(!rotate_block_h && !rotate_block_y) rotate_block_h=1,rotate_block_d=-1;
-												break;
+
 						default:
 								break;
 				}
@@ -463,7 +464,18 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 						case GLFW_KEY_ESCAPE:
 								quit(window);
 								break;
-
+								case GLFW_KEY_UP:
+								if(!rotate_block_h && !rotate_block_y) rotate_block_y=1,rotate_block_d=1;
+								break;
+								case GLFW_KEY_DOWN:
+								if(!rotate_block_h && !rotate_block_y) rotate_block_y=1,rotate_block_d=-1;
+								break;
+								case GLFW_KEY_RIGHT:
+											if(!rotate_block_h && !rotate_block_y) rotate_block_h=1,rotate_block_d=1;
+											break;
+								case GLFW_KEY_LEFT:
+												if(!rotate_block_h && !rotate_block_y) rotate_block_h=1,rotate_block_d=-1;
+												break;
 						default:
 								break;
 				}
@@ -788,6 +800,47 @@ void move_block_h(float d)
 		block_last_pos.push(cuboid); block_last_pos.pop();
 	}
 }
+void find_vertical_rotation_axis(float d)
+{
+	if(update_block_y)
+	{
+		if(no_of_rotations-- == 0)
+		{
+			update_block_y=0,rotate_block_y=0,no_of_rotations=90/block_rotating_degree;
+		}
+		return ;
+	}
+	no_of_rotations--;
+	glm::vec3 r=FrontOfBlock();
+	update_block_y=1;
+	if(abs(dot(r,cuboid.up))>0.98)
+	{
+		cuboid_ref_point=r * d * (tilewidth) + glm::vec3(0,0,1)*((float)-1 * (currentBlockHeight())/2);
+	}
+	else
+	{
+		cuboid_ref_point=r * d * (tilewidth/2)+glm::vec3(0,0,1)*((float)-1 * currentBlockHeight()/2);
+	}
+	rotation_fixed_point = cuboid_ref_point + cuboid.center;
+}
+void move_block_v(float d)
+{
+	find_vertical_rotation_axis(d);
+	cuboid.up=rotate(cuboid.up,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),FrontOfBlock())));
+	cuboid.angle=rotate(cuboid.angle,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),FrontOfBlock())));
+	cuboid_ref_point=rotate(cuboid_ref_point,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),FrontOfBlock())));
+	cuboid.center=rotation_fixed_point - cuboid_ref_point;
+	if(rotate_block_y==0)
+	{
+		for(int i=0;i<3;++i)
+		{
+			cuboid.angle[i]=roundoff(cuboid.angle[i]);
+			cuboid.up[i]=roundoff(cuboid.up[i]);
+			cuboid.center[i]=roundoff(cuboid.center[i]);
+		}
+		block_last_pos.push(cuboid); block_last_pos.pop();
+	}
+}
 
 /***********
   floor
@@ -890,6 +943,7 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 		glUniform1i(glGetUniformLocation(textureProgramID, "texSampler"), 0);
 
 		if(rotate_block_h) move_block_h(rotate_block_d);
+		else if(rotate_block_y) move_block_v(rotate_block_d);
 		// Copy MVP to texture shaders
 		glUniformMatrix4fv(Matrices.TexMatrixID, 1, GL_FALSE, &MVP[0][0]);
 		//cout<<"Done till here"<<endl ;
