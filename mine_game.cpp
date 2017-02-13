@@ -772,7 +772,7 @@ void initGL (GLFWwindow* window, int width, int height)
 
 
 
-        GLint textureID5 = createTexture("Images/middle.png");
+        GLint textureID5 = createTexture("Images/middle.jpg");
         createRectangle (textureID5);
 
 
