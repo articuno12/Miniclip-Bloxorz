@@ -18,7 +18,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
+#include <glm/gtx/rotate_vector.hpp>
 using namespace std;
 
 struct VAO {
@@ -350,8 +350,38 @@ GLuint createTexture (const char* filename)
 /**************************
  * Customizable functions *
  **************************/
+ float camera_rotation_angle = (float)30*M_PI/(float)180;
+ void update_Camera()
+ {
+   Matrices.view = glm::lookAt(Camera.center,Camera.angle, Camera.up);
+ }
+ void set_Camera()
+ {
 
-
+   Camera.center=glm::vec3(camera_radius,0,0);
+   Camera.angle=glm::vec3(0, 0, 0);
+   Camera.up =glm::vec3(0, 0, 1);
+   update_Camera();
+ }
+ void camera_move(int d,int c)
+ {
+   if(d==0) //implies horizontal roattion
+   Camera.center=glm::rotate(Camera.center,camera_rotation_angle*c,Camera.up);
+   else if(d==1) //vertical roattion
+   {
+     glm::vec3 normal=cross(Camera.up,Camera.angle-Camera.center);
+     normal=normalize(normal);
+     Camera.center=glm::rotate(Camera.center,camera_rotation_angle*c,normal);
+     Camera.up=normalize(cross(Camera.angle-Camera.center,normal));
+   }
+   update_Camera();
+ }
+void set_camera_radius(float d)
+{
+  camera_radius=glm::length(Camera.center-Camera.angle) * (float)(1+d*0.15);
+  Camera.center=normalize(Camera.center-Camera.angle) * camera_radius + Camera.angle;
+  update_Camera();
+}
 //* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -386,11 +416,23 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 /* Executed for character input (like in text boxes) */
 void keyboardChar (GLFWwindow* window, unsigned int key)
 {
-  //   switch (key) {
-  //   case 'Q':
-  //   case 'q':
-	// quit(window);
-	// break;
+  switch (key) {
+     case 'Q':
+     case 'q':
+	    quit(window);
+	     break;
+      case 'v':
+      camera_move(1,1);
+      break;
+      case 'm':
+      camera_move(0,1);
+      break;
+      case 'f':
+      set_camera_radius(1);
+      break;
+      case 'n':
+      set_camera_radius(-1);
+      break;
   //   case 'a':
 	// rect_pos.x -= 0.1;
 	// break;
@@ -438,7 +480,7 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
 	// break;
   //   default:
 	// break;
-  //   }
+  }
 }
 
 /* Executed when a mouse button is pressed/released */
@@ -660,23 +702,7 @@ void createFloor ()
     // create3DObject creates and returns a handle to a VAO that can be used later
     floor_vao = create3DObject(GL_TRIANGLES, 2*3, vertex_buffer_data, color_buffer_data, GL_FILL);
 }
-void update_Camera()
-{
-  Matrices.view = glm::lookAt(Camera.center,Camera.angle, Camera.up);
-}
-void set_Camera()
-{
 
-  Camera.center=glm::vec3(camera_radius,0,0);
-  Camera.angle=glm::vec3(0, 0, 0);
-  Camera.up =glm::vec3(0, 0, 1);
-  update_Camera();
-}
-void camera_hor()
-{
-
-}
-float camera_rotation_angle = 90;
 
 /* Render the scene with openGL */
 /* Edit this function according to your assignment */
