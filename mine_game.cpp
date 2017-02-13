@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <queue>
 #include <cmath>
 #include <time.h>
 #include <stdlib.h>
@@ -95,6 +96,17 @@ vector<vector<game_object> > hidden_floor;
 map<pair<int,int> , int> buttons;
 int floor_width,floor_length;
 float tilewidth=2;float tileheight=0.2;float tilelength=2;
+glm::vec3 cuboid_ref_point,rotation_fixed_point;
+bool update_block_h=false;
+bool rotate_block_h=false;
+bool rotate_block_y=false;
+bool update_block_y=false;
+float rotate_block_d;
+bool block_moving=false;
+int block_rotating_degree=6;
+float cuboid_rotation_angle=(float)block_rotating_degree * M_PI/180;
+int no_of_rotations=90/block_rotating_degree;
+queue<game_object> block_last_pos;
 /* Function to load Shaders - Use it as it is */
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path)
 {
@@ -357,7 +369,7 @@ GLuint createTexture (const char* filename)
 		return TextureID;
 }
 /**************************
- * Customizable functions *
+ * CAMERA *
  **************************/
 float camera_rotation_angle = (float)30*M_PI/(float)180;
 void update_Camera()
@@ -391,6 +403,20 @@ void set_camera_radius(float d)
 		Camera.center=normalize(Camera.center-Camera.angle) * camera_radius + Camera.angle;
 		update_Camera();
 }
+void top_view()
+{
+		Camera.up=glm::vec3(0,1,0);
+		Camera.center=glm::vec3(0,0,camera_radius);
+		Camera.angle=glm::vec3(0,0,0);
+		update_Camera();
+}
+glm::vec3 GetMouseCoordinates(GLFWwindow* window)
+{
+		double CursorX,CursorY ;
+		glfwGetCursorPos(window, &CursorX, &CursorY) ;
+		return glm::vec3(CursorX,CursorY,0) ;
+}
+
 //* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -407,6 +433,12 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 						case GLFW_KEY_X:
 								// do something ..
 								break;
+						case GLFW_KEY_RIGHT:
+									if(!rotate_block_h && !rotate_block_y) rotate_block_h=1,rotate_block_d=1;
+									break;
+						case GLFW_KEY_LEFT:
+										if(!rotate_block_h && !rotate_block_y) rotate_block_h=1,rotate_block_d=-1;
+										break;
 						default:
 								break;
 				}
@@ -416,6 +448,22 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 						case GLFW_KEY_ESCAPE:
 								quit(window);
 								break;
+								case GLFW_KEY_RIGHT:
+											if(!rotate_block_h && !rotate_block_y) rotate_block_h=1,rotate_block_d=1;
+											break;
+								case GLFW_KEY_LEFT:
+												if(!rotate_block_h && !rotate_block_y) rotate_block_h=1,rotate_block_d=-1;
+												break;
+						default:
+								break;
+				}
+		}
+		else if (action == GLFW_REPEAT) {
+				switch (key) {
+						case GLFW_KEY_ESCAPE:
+								quit(window);
+								break;
+
 						default:
 								break;
 				}
@@ -497,8 +545,6 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
 		// Ortho projection for 2D views
 		//Matrices.projection = glm::ortho(-4.0f, 4.0f, -4.0f, 4.0f, 0.1f, 500.0f);
 }
-
-VAO *rectangle, *floor_vao;
 
 // Creates the rectangle object used in this sample code
 VAO* createRectangle (GLuint textureID)
@@ -638,8 +684,6 @@ VAO* createRectangle (GLuint textureID)
 		// create3DTexturedObject creates and returns a handle to a VAO that can be used later
 		return create3DTexturedObject(GL_TRIANGLES, 12*3, vertex_buffer_data, texture_buffer_data, textureID, GL_FILL);
 
-		// create3DObject creates and returns a handle to a VAO that can be used later
-		//rectangle = create3DObject(GL_TRIANGLES, 12*3, vertex_buffer_data, color_buffer_data, GL_FILL);
 }
 //***************************
 //CUBOID
@@ -680,24 +724,75 @@ void align_block(vector<vector<int> > &Grid)
 }
 glm::vec3 RightOfBlock()
 {
-	glm::vec3 right,u,r ;
-	right = normalize(cross(Camera.angle - Camera.center,Camera.up)) ;
-	u=abs(dot(right,glm::vec3(1,0,0)));
-	r=abs(dot(right,glm::vec3(0,1,0)));
-	if(u>r) right=normalize(glm::vec3(1,0,0) * dot(right,glm::vec3(1,0,0)));
-	else right=normalize(glm::vec3(0,1,0) * dot(right,glm::vec3(0,1,0)));
-	return right;
+		glm::vec3 right ;
+		right = normalize(cross(Camera.angle - Camera.center,Camera.up)) ;
+		float u=abs(dot(right,glm::vec3(1,0,0)));
+		float r=abs(dot(right,glm::vec3(0,1,0)));
+		if(u>r) right=normalize(glm::vec3(1,0,0) * dot(right,glm::vec3(1,0,0)));
+		else right=normalize(glm::vec3(0,1,0) * dot(right,glm::vec3(0,1,0)));
+		return right;
 }
 glm::vec3 FrontOfBlock(void)
- {
-	  glm::vec3 temp=cross(glm::vec3(0,0,1),RightOfBlock());
+{
+		glm::vec3 temp=cross(glm::vec3(0,0,1),RightOfBlock());
 		return normalize(temp);
 }
 float currentBlockHeight()
 {
-	if(abs(dot(glm::vec3(0,0,1),cuboid.up)) > 0.98) return tilewidth+tilelength;
-	else return tilewidth;
+		if(abs(dot(glm::vec3(0,0,1),cuboid.up)) > 0.98) return tilewidth+tilelength;
+		else return tilewidth;
 }
+float roundoff(float x)
+{
+    if(abs(x - ceil(x)) > abs(x - floor(x))) return floor(x) ;
+    return ceil(x) ;
+}
+void find_horizontal_rotation_axis(float d)
+{
+	if(update_block_h)
+	{
+		if(no_of_rotations-- == 0)
+		{
+			update_block_h=0,rotate_block_h=0,no_of_rotations=90/block_rotating_degree;
+		}
+		return ;
+	}
+	no_of_rotations--;
+	glm::vec3 r=RightOfBlock();
+	update_block_h=1;
+	if(abs(dot(r,cuboid.up))>0.98)
+	{
+		cuboid_ref_point=r * d * (tilewidth) + glm::vec3(0,0,1)*((float)-1 * (tilewidth)/2);
+	}
+	else
+	{
+		cuboid_ref_point=r * d * (tilewidth/2)+glm::vec3(0,0,1)*((float)-1 * currentBlockHeight()/2);
+	}
+	rotation_fixed_point = cuboid_ref_point + cuboid.center;
+}
+void move_block_h(float d)
+{
+	find_horizontal_rotation_axis(d);
+	cuboid.up=rotate(cuboid.up,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),RightOfBlock())));
+	cuboid.angle=rotate(cuboid.angle,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),RightOfBlock())));
+	cuboid_ref_point=rotate(cuboid_ref_point,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),RightOfBlock())));
+	cuboid.center=rotation_fixed_point - cuboid_ref_point;
+	if(rotate_block_h==0)
+	{
+		for(int i=0;i<3;++i)
+		{
+			cuboid.angle[i]=roundoff(cuboid.angle[i]);
+			cuboid.up[i]=roundoff(cuboid.up[i]);
+			cuboid.center[i]=roundoff(cuboid.center[i]);
+		}
+		block_last_pos.push(cuboid); block_last_pos.pop();
+	}
+}
+
+/***********
+  floor
+ ***********/
+
 vector<vector<int> > read_floor(int level)
 {
 		string filename;
@@ -793,13 +888,8 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glUniform1i(glGetUniformLocation(textureProgramID, "texSampler"), 0);
-		// Load identity to model matrix
-		Matrices.model = glm::mat4(1.0f);
-		glm::mat4 translateRectangle = glm::translate (glm::vec3(0, 0, 0));        // glTranslatef
-		// glm::mat4 rotateRectangle = glm::rotate((float)(rectangle_rotation*M_PI/180.0f), glm::vec3(0,0,1)); // rotate about vector (-1,1,1)
-		Matrices.model *= (translateRectangle);
-		MVP = VP * Matrices.model;
 
+		if(rotate_block_h) move_block_h(rotate_block_d);
 		// Copy MVP to texture shaders
 		glUniformMatrix4fv(Matrices.TexMatrixID, 1, GL_FALSE, &MVP[0][0]);
 		//cout<<"Done till here"<<endl ;
