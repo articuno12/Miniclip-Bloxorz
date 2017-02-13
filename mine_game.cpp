@@ -87,6 +87,7 @@ struct game_object
 
 GLuint programID, waterProgramID, fontProgramID, textureProgramID;
 double last_update_time, current_time;
+game_object cuboid;
 float camera_radius=12;
 float rectangle_rotation = 0;
 game_object Camera;
@@ -96,7 +97,7 @@ vector<vector<game_object> > hidden_floor;
 map<pair<int,int> , int> buttons;
 int floor_width,floor_length;
 float tilewidth=2;float tileheight=0.2;float tilelength=2;
-glm::vec3 cuboid_ref_point,rotation_fixed_point;
+glm::vec3 cuboid_ref_point,rotation_fixed_point,mouse_previous,rightb,frontb;
 bool update_block_h=false;
 bool rotate_block_h=false;
 bool rotate_block_y=false;
@@ -107,7 +108,9 @@ int block_rotating_degree=6;
 float cuboid_rotation_angle=(float)block_rotating_degree * M_PI/180;
 int no_of_rotations=90/block_rotating_degree;
 float BlockFallingSpeed=0.08;
-queue<game_object> block_last_pos;
+bool helicam=0,mousefollow=0;
+GLFWwindow* window;
+queue<glm::vec3> block_last_pos;
 /* Function to load Shaders - Use it as it is */
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path)
 {
@@ -385,7 +388,7 @@ void set_Camera()
 		Camera.up =glm::vec3(0, 0, 1);
 		update_Camera();
 }
-void camera_move(int d,int c)
+void camera_move(float d,float c)
 {
 		if(d==0) //implies horizontal roattion
 				Camera.center=glm::rotate(Camera.center,camera_rotation_angle*c,Camera.up);
@@ -418,13 +421,30 @@ void tower_view()
 			Camera.angle=glm::vec3(0,0,0);
 			update_Camera();
 }
-glm::vec3 GetMouseCoordinates(GLFWwindow* window)
+glm::vec3 GetMouseCoordinates(void)
 {
 		double CursorX,CursorY ;
 		glfwGetCursorPos(window, &CursorX, &CursorY) ;
+		cout<<CursorX<<" "<<CursorY<<endl ;
 		return glm::vec3(CursorX,CursorY,0) ;
 }
-
+void helicam_view()
+{
+		glm::vec3 Mouse = GetMouseCoordinates() ;
+		camera_move(0,-(Mouse.x - mouse_previous.x)/1000) ;
+    camera_move(1,(Mouse.y - mouse_previous.y)/1000) ;
+		update_Camera();
+}
+void mousefollow_view()
+{
+	glm::vec3 d= block_last_pos.front() - cuboid.center;
+	Camera.center=normalize(d) * camera_radius + cuboid.center;
+	Camera.center.z=abs(Camera.center.z);
+	d=cuboid.center-Camera.center;
+	Camera.angle=cuboid.center;
+	Camera.up = normalize(glm::vec3(0,0,1) - (d) * dot(glm::vec3(0,0,1),d)) ;
+	update_Camera();
+}
 //* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -516,6 +536,8 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
 				case 'o':
 								tower_view();
 								break;
+				case 's':
+				mousefollow=1;
 				default:
 						break;
 		}
@@ -525,10 +547,14 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
 void mouseButton (GLFWwindow* window, int button, int action, int mods)
 {
 		switch (button) {
-				case GLFW_MOUSE_BUTTON_RIGHT:
-						if (action == GLFW_RELEASE) {
-								//	    rectangle_rot_dir *= -1;
+				case GLFW_MOUSE_BUTTON_LEFT:
+						if (action == GLFW_PRESS)
+						{
+								mousefollow=0;
+								helicam=1;
+								mouse_previous=GetMouseCoordinates();
 						}
+						else if (action == GLFW_RELEASE) helicam=0;
 						break;
 				default:
 						break;
@@ -714,7 +740,7 @@ VAO* createRectangle (GLuint textureID)
 //***************************
 //CUBOID
 //***************************
-game_object cuboid;
+
 int RandomNo(int limit) { return rand()%limit ;}
 void create_cuboid()
 {
@@ -747,6 +773,7 @@ void align_block(vector<vector<int> > &Grid)
 				cuboid.center.x = (it.first - floor_width/2)*tilewidth;
 				cuboid.center.y = (it.second - floor_length/2)*tilelength ;
 		}
+		block_last_pos.push(cuboid.center);
 }
 glm::vec3 RightOfBlock()
 {
@@ -783,25 +810,26 @@ void find_horizontal_rotation_axis(float d)
 		}
 		return ;
 	}
+	rightb=RightOfBlock();
 	no_of_rotations--;
-	glm::vec3 r=RightOfBlock();
 	update_block_h=1;
-	if(abs(dot(r,cuboid.up))>0.98)
+	if(abs(dot(rightb,cuboid.up))>0.98)
 	{
-		cuboid_ref_point=r * d * (tilewidth) + glm::vec3(0,0,1)*((float)-1 * (tilewidth)/2);
+		cuboid_ref_point=rightb * d * (tilewidth) + glm::vec3(0,0,1)*((float)-1 * (tilewidth)/2);
 	}
 	else
 	{
-		cuboid_ref_point=r * d * (tilewidth/2)+glm::vec3(0,0,1)*((float)-1 * currentBlockHeight()/2);
+		cuboid_ref_point=rightb * d * (tilewidth/2)+glm::vec3(0,0,1)*((float)-1 * currentBlockHeight()/2);
 	}
 	rotation_fixed_point = cuboid_ref_point + cuboid.center;
 }
 void move_block_h(float d)
 {
+
 	find_horizontal_rotation_axis(d);
-	cuboid.up=rotate(cuboid.up,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),RightOfBlock())));
-	cuboid.angle=rotate(cuboid.angle,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),RightOfBlock())));
-	cuboid_ref_point=rotate(cuboid_ref_point,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),RightOfBlock())));
+	cuboid.up=rotate(cuboid.up,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),rightb)));
+	cuboid.angle=rotate(cuboid.angle,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),rightb)));
+	cuboid_ref_point=rotate(cuboid_ref_point,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),rightb)));
 	cuboid.center=rotation_fixed_point - cuboid_ref_point;
 	if(rotate_block_h==0)
 	{
@@ -811,7 +839,7 @@ void move_block_h(float d)
 			cuboid.up[i]=roundoff(cuboid.up[i]);
 			cuboid.center[i]=roundoff(cuboid.center[i]);
 		}
-		block_last_pos.push(cuboid); block_last_pos.pop();
+		block_last_pos.push(cuboid.center); block_last_pos.pop();
 		block_moving=1;
 	}
 }
@@ -825,25 +853,26 @@ void find_vertical_rotation_axis(float d)
 		}
 		return ;
 	}
+	frontb=FrontOfBlock();
 	no_of_rotations--;
-	glm::vec3 r=FrontOfBlock();
+//	glm::vec3 r=FrontOfBlock();
 	update_block_y=1;
-	if(abs(dot(r,cuboid.up))>0.98)
+	if(abs(dot(frontb,cuboid.up))>0.98)
 	{
-		cuboid_ref_point=r * d * (tilewidth) + glm::vec3(0,0,1)*((float)-1 * (currentBlockHeight())/2);
+		cuboid_ref_point=frontb * d * (tilewidth) + glm::vec3(0,0,1)*((float)-1 * (currentBlockHeight())/2);
 	}
 	else
 	{
-		cuboid_ref_point=r * d * (tilewidth/2)+glm::vec3(0,0,1)*((float)-1 * currentBlockHeight()/2);
+		cuboid_ref_point=frontb * d * (tilewidth/2)+glm::vec3(0,0,1)*((float)-1 * currentBlockHeight()/2);
 	}
 	rotation_fixed_point = cuboid_ref_point + cuboid.center;
 }
 void move_block_v(float d)
 {
 	find_vertical_rotation_axis(d);
-	cuboid.up=rotate(cuboid.up,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),FrontOfBlock())));
-	cuboid.angle=rotate(cuboid.angle,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),FrontOfBlock())));
-	cuboid_ref_point=rotate(cuboid_ref_point,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),FrontOfBlock())));
+	cuboid.up=rotate(cuboid.up,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),frontb)));
+	cuboid.angle=rotate(cuboid.angle,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),frontb)));
+	cuboid_ref_point=rotate(cuboid_ref_point,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),frontb)));
 	cuboid.center=rotation_fixed_point - cuboid_ref_point;
 	if(rotate_block_y==0)
 	{
@@ -853,7 +882,7 @@ void move_block_v(float d)
 			cuboid.up[i]=roundoff(cuboid.up[i]);
 			cuboid.center[i]=roundoff(cuboid.center[i]);
 		}
-		block_last_pos.push(cuboid); block_last_pos.pop();
+		block_last_pos.push(cuboid.center); block_last_pos.pop();
 		block_moving=1;
 	}
 }
@@ -977,6 +1006,8 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glUniform1i(glGetUniformLocation(textureProgramID, "texSampler"), 0);
+		if(helicam) helicam_view();
+		else if(mousefollow) mousefollow_view();
 		if(block_moving) checkfall();
 		if(block_falling) blockfall();
 		if(rotate_block_h) move_block_h(rotate_block_d);
@@ -1008,8 +1039,8 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 
 /* Initialise glfw window, I/O callbacks and the renderer to use */
 /* Nothing to Edit here */
+ // window desciptor/handle
 GLFWwindow* initGLFW (int width, int height){
-		GLFWwindow* window; // window desciptor/handle
 
 		glfwSetErrorCallback(error_callback);
 		if (!glfwInit()) {
@@ -1062,7 +1093,7 @@ void initGL (GLFWwindow* window, int width, int height)
 
 		GLint textureID5 = createTexture("Images/middle.jpg");
 		createRectangle (textureID5);
-
+		block_last_pos.push(glm::vec3(1,0,0));
 		create_cuboid();
 		make_floor(1);
 		// Create and compile our GLSL program from the shaders
