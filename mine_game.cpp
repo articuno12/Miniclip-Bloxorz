@@ -411,6 +411,13 @@ void top_view()
 		Camera.angle=glm::vec3(0,0,0);
 		update_Camera();
 }
+void tower_view()
+{
+	Camera.center=normalize(glm::vec3(0,1,1)) * camera_radius;
+	    Camera.up = normalize(cross(Camera.center,glm::vec3(-1,0,0))) ;
+			Camera.angle=glm::vec3(0,0,0);
+			update_Camera();
+}
 glm::vec3 GetMouseCoordinates(GLFWwindow* window)
 {
 		double CursorX,CursorY ;
@@ -503,6 +510,12 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
 				case 'n':
 						set_camera_radius(-1);
 						break;
+				case 't':
+							top_view();
+							break;
+				case 'o':
+								tower_view();
+								break;
 				default:
 						break;
 		}
