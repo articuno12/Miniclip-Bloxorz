@@ -102,10 +102,11 @@ bool rotate_block_h=false;
 bool rotate_block_y=false;
 bool update_block_y=false;
 float rotate_block_d;
-bool block_moving=false;
+bool block_moving=false,block_falling=false;
 int block_rotating_degree=6;
 float cuboid_rotation_angle=(float)block_rotating_degree * M_PI/180;
 int no_of_rotations=90/block_rotating_degree;
+float BlockFallingSpeed=0.08;
 queue<game_object> block_last_pos;
 /* Function to load Shaders - Use it as it is */
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path)
@@ -434,16 +435,16 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 								// do something ..
 								break;
 						case GLFW_KEY_RIGHT:
-									if(!rotate_block_h && !rotate_block_y) rotate_block_h=1,rotate_block_d=1;
+									if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_h=1,rotate_block_d=1;
 									break;
 						case GLFW_KEY_LEFT:
-										if(!rotate_block_h && !rotate_block_y) rotate_block_h=1,rotate_block_d=-1;
+										if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_h=1,rotate_block_d=-1;
 										break;
 						case GLFW_KEY_UP:
-						if(!rotate_block_h && !rotate_block_y) rotate_block_y=1,rotate_block_d=1;
+						if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_y=1,rotate_block_d=1;
 						break;
 						case GLFW_KEY_DOWN:
-						if(!rotate_block_h && !rotate_block_y) rotate_block_y=1,rotate_block_d=-1;
+						if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_y=1,rotate_block_d=-1;
 						break;
 						default:
 								break;
@@ -465,16 +466,16 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 								quit(window);
 								break;
 								case GLFW_KEY_UP:
-								if(!rotate_block_h && !rotate_block_y) rotate_block_y=1,rotate_block_d=1;
+								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_y=1,rotate_block_d=1;
 								break;
 								case GLFW_KEY_DOWN:
-								if(!rotate_block_h && !rotate_block_y) rotate_block_y=1,rotate_block_d=-1;
+								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_y=1,rotate_block_d=-1;
 								break;
 								case GLFW_KEY_RIGHT:
-											if(!rotate_block_h && !rotate_block_y) rotate_block_h=1,rotate_block_d=1;
+											if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_h=1,rotate_block_d=1;
 											break;
 								case GLFW_KEY_LEFT:
-												if(!rotate_block_h && !rotate_block_y) rotate_block_h=1,rotate_block_d=-1;
+												if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_h=1,rotate_block_d=-1;
 												break;
 						default:
 								break;
@@ -798,6 +799,7 @@ void move_block_h(float d)
 			cuboid.center[i]=roundoff(cuboid.center[i]);
 		}
 		block_last_pos.push(cuboid); block_last_pos.pop();
+		block_moving=1;
 	}
 }
 void find_vertical_rotation_axis(float d)
@@ -839,7 +841,28 @@ void move_block_v(float d)
 			cuboid.center[i]=roundoff(cuboid.center[i]);
 		}
 		block_last_pos.push(cuboid); block_last_pos.pop();
+		block_moving=1;
 	}
+}
+
+void checkfall()
+{
+	block_moving=0;
+	bool fall=true;
+	for(auto &t:normal_floor)
+	{
+		if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
+		{
+			fall=0;
+			break;
+		}
+	}
+	if(fall) block_falling=1;
+}
+void blockfall()
+{
+cuboid.center.z -= BlockFallingSpeed ;
+    if(abs(cuboid.center.z) >= 2*camera_radius) cuboid.center.z = 2*camera_radius ;
 }
 
 /***********
@@ -941,7 +964,8 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glUniform1i(glGetUniformLocation(textureProgramID, "texSampler"), 0);
-
+		if(block_moving) checkfall();
+		if(block_falling) blockfall();
 		if(rotate_block_h) move_block_h(rotate_block_d);
 		else if(rotate_block_y) move_block_v(rotate_block_d);
 		// Copy MVP to texture shaders
