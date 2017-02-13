@@ -641,8 +641,11 @@ VAO* createRectangle (GLuint textureID)
 		// create3DObject creates and returns a handle to a VAO that can be used later
 		//rectangle = create3DObject(GL_TRIANGLES, 12*3, vertex_buffer_data, color_buffer_data, GL_FILL);
 }
-int RandomNo(int limit) { return rand()%limit ;}
+//***************************
+//CUBOID
+//***************************
 game_object cuboid;
+int RandomNo(int limit) { return rand()%limit ;}
 void create_cuboid()
 {
 		cuboid.height=tilewidth+tilelength;
@@ -674,6 +677,26 @@ void align_block(vector<vector<int> > &Grid)
 				cuboid.center.x = (it.first - floor_width/2)*tilewidth;
 				cuboid.center.y = (it.second - floor_length/2)*tilelength ;
 		}
+}
+glm::vec3 RightOfBlock()
+{
+	glm::vec3 right,u,r ;
+	right = normalize(cross(Camera.angle - Camera.center,Camera.up)) ;
+	u=abs(dot(right,glm::vec3(1,0,0)));
+	r=abs(dot(right,glm::vec3(0,1,0)));
+	if(u>r) right=normalize(glm::vec3(1,0,0) * dot(right,glm::vec3(1,0,0)));
+	else right=normalize(glm::vec3(0,1,0) * dot(right,glm::vec3(0,1,0)));
+	return right;
+}
+glm::vec3 FrontOfBlock(void)
+ {
+	  glm::vec3 temp=cross(glm::vec3(0,0,1),RightOfBlock());
+		return normalize(temp);
+}
+float currentBlockHeight()
+{
+	if(abs(dot(glm::vec3(0,0,1),cuboid.up)) > 0.98) return tilewidth+tilelength;
+	else return tilewidth;
 }
 vector<vector<int> > read_floor(int level)
 {
@@ -745,8 +768,7 @@ void make_floor(int level)
 		}
 		align_block(floor_plan);
 }
-/* Render the scene with openGL */
-/* Edit this function according to your assignment */
+
 void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int doV, int doP)
 {
 		int fbwidth, fbheight;
