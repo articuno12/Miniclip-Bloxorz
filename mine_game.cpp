@@ -908,7 +908,7 @@ void checkfall()
 
 					int i=(int)( roundoff(t.center.x)/tilewidth + floor_width/2);
 					int j= (int)(roundoff(t.center.y)/tilelength + floor_length/2);
-					cout<<"i = "<<i<<" j = "<<j<<endl ;
+				//	cout<<"i = "<<i<<" j = "<<j<<endl ;
 					auto b = buttons.find(mp(i,j));
 					if(b!=buttons.end())
 					{
@@ -995,7 +995,7 @@ void make_floor(int level)
 						}
 						else if(floor_plan[i][j]%2==0 && floor_plan[i][j]>0)
 						{
-							cout<<"Button at "<<i<<" "<<j<<endl ;
+							//cout<<"Button at "<<i<<" "<<j<<endl ;
 								bblock.center = glm::vec3((i - floor_width/2)*tilewidth,(j - floor_length/2)*tilelength, -(tilelength + tilewidth)/2 - tileheight/2) ;
 								button_floor.pb(bblock);
 								buttons[mp(i,j)] = floor_plan[i][j]/2-1;
@@ -1149,7 +1149,7 @@ void set_textures()
 		Texture["live_block"]=createTexture("Images/live_block.jpg");
 		Texture["hidden_block"]=createTexture("Images/hidden_block.jpg");
 		Texture["button_block"]=createTexture("Images/button_floor.png");
-		Texture["cuboid"]=createTexture("Images/middle.png");
+		Texture["cuboid"]=createTexture("Images/middle.jpg");
 		Texture["sky"]=createTexture("Images/mars.jpg");
 }
 /* Initialize the OpenGL rendering properties */
