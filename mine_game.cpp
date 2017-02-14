@@ -80,7 +80,7 @@ struct game_object
 		VAO* object;
 		glm::vec3 center,speed,scale,rotation_axis,angle,gravity,up;
 		COLOR color;
-		bool is_rotate;
+		bool is_present;
 		float height,width,length,radius;
 };
 //int do_rot, floor_rel;;
@@ -95,6 +95,7 @@ map<string,GLuint> Texture;
 vector<game_object> normal_floor,button_floor;
 vector<vector<game_object> > hidden_floor;
 map<pair<int,int> , int> buttons;
+map<int,bool> button_record;
 int floor_width,floor_length;
 float tilewidth=2;float tileheight=0.2;float tilelength=2;
 glm::vec3 cuboid_ref_point,rotation_fixed_point,mouse_previous,rightb,frontb;
@@ -886,7 +887,8 @@ void move_block_v(float d)
 				block_moving=1;
 		}
 }
-
+//just a declaration
+void set_hidden_floor();
 void checkfall()
 {
 		block_moving=0;
@@ -896,8 +898,47 @@ void checkfall()
 				if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
 				{
 						fall=0;
-						break;
+
+						int i=(int)(tilewidth * roundoff(t.center.x) + floor_width/2);
+						int j= (int)(tilelength * roundoff(t.center.x) + floor_length/2);
+						auto b = buttons.find(mp(i,j));
+						if(b!=buttons.end())
+						{
+							auto p=button_record.find(b->second);
+							if(p==button_record.end()) button_record[b->second]=1;
+							else button_record[b->second] =button_record[b->second] ^ 1;
+						}
+						set_hidden_floor();
 				}
+		}
+		for(auto &t:button_floor)
+		{
+			if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
+			{
+					fall=0;
+
+					int i=(int)(tilewidth * roundoff(t.center.x) + floor_width/2);
+					int j= (int)(tilelength * roundoff(t.center.x) + floor_length/2);
+					auto b = buttons.find(mp(i,j));
+					if(b!=buttons.end())
+					{
+						auto p=button_record.find(b->second);
+						if(p==button_record.end()) button_record[b->second]=1;
+						else button_record[b->second] =button_record[b->second] ^ 1;
+					}
+					set_hidden_floor();
+			}
+		}
+		for(int i=0;i<(int)hidden_floor.size();++i)
+		{
+			for(auto &t:hidden_floor[i])
+			if(t.is_present)
+			{
+				if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
+				{
+						fall=0;
+					}
+			}
 		}
 		if(fall) block_falling=1;
 }
@@ -930,7 +971,7 @@ vector<vector<int> > read_floor(int level)
 				{
 						in>>t;
 						grid[i].pb(t);
-						cout<<"im"<<endl;
+						//cout<<"im"<<endl;
 				}
 		}
 		in.close() ;
@@ -975,11 +1016,25 @@ void make_floor(int level)
 						else if(floor_plan[i][j]%2==1)
 						{
 								hblock.center = glm::vec3((i - floor_width/2)*tilewidth,(j - floor_length/2)*tilelength, -(tilelength + tilewidth)/2 - tileheight/2) ;
+								hblock.is_present=0;
 								hidden_floor[floor_plan[i][j]/2-1].pb(hblock);
 						}
 				}
 		}
 		align_block(floor_plan);
+}
+
+void set_hidden_floor()
+{
+	for(int x=0;x<(int)hidden_floor.size();++x)
+	{
+		auto p=button_record.find(x);
+		if(p!=button_record.end())
+		{
+			if(p->second) for(auto &i:hidden_floor[x]) i.is_present=1;
+			else for(auto &i:hidden_floor[x]) i.is_present=0;
+		}
+	}
 }
 
 void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int doV, int doP)
@@ -1014,7 +1069,7 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 		else if(rotate_block_y) move_block_v(rotate_block_d);
 		// Copy MVP to texture shaders
 		glUniformMatrix4fv(Matrices.TexMatrixID, 1, GL_FALSE, &MVP[0][0]);
-		//cout<<"Done till here"<<endl ;
+		//floor
 		for(auto &it:normal_floor)
 		{
 				Matrices.model = glm::translate(it.center) * glm::scale(it.scale);
@@ -1028,6 +1083,19 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 				MVP = VP * Matrices.model;
 				glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 				draw3DTexturedObject(it.object);
+		}
+		for(auto &i:hidden_floor)
+		{
+			for(auto &it:i)
+			{
+				if(it.is_present)
+				{
+					Matrices.model = glm::translate(it.center) * glm::scale(it.scale);
+					MVP = VP * Matrices.model;
+					glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+					draw3DTexturedObject(it.object);
+				}
+			}
 		}
 		//drawing cuboid
 		Matrices.model = Rotatecuboid(cuboid.angle,normalize(cross(cuboid.up,cuboid.angle)),cuboid.up) * glm::scale(cuboid.scale);
@@ -1075,7 +1143,7 @@ void set_textures()
 {
 		Texture["live_block"]=createTexture("Images/live_block.jpg");
 		Texture["hidden_block"]=createTexture("Images/hidden_block.jpg");
-		Texture["button_block"]=createTexture("Images/button_block.jpg");
+		Texture["button_block"]=createTexture("Images/button_floor.png");
 		Texture["cuboid"]=createTexture("Images/middle.png");
 }
 /* Initialize the OpenGL rendering properties */
