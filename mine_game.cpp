@@ -54,18 +54,18 @@ struct COLOR {
 		float b;
 };
 struct WavHeader {
-    char id[4]; //should contain RIFF
-    int32_t totalLength;
-    char wavefmt[8];
-    int32_t format; // 16 for PCM
-    int16_t pcm; // 1 for PCM
-    int16_t channels;
-    int32_t frequency;
-    int32_t bytesPerSecond;
-    int16_t bytesByCapture;
-    int16_t bitsPerSample;
-    char data[4]; // "data"
-    int32_t bytesInData;
+		char id[4]; //should contain RIFF
+		int32_t totalLength;
+		char wavefmt[8];
+		int32_t format; // 16 for PCM
+		int16_t pcm; // 1 for PCM
+		int16_t channels;
+		int32_t frequency;
+		int32_t bytesPerSecond;
+		int16_t bytesByCapture;
+		int16_t bitsPerSample;
+		char data[4]; // "data"
+		int32_t bytesInData;
 };
 //defining colors
 COLOR grey = {168.0/255.0,168.0/255.0,168.0/255.0};
@@ -226,69 +226,69 @@ void quit(GLFWwindow *window)
 }
 void* Writer(void * i)
 {
-	ao_device* device;
-    ao_sample_format format;
-    int defaultDriver;
-    WavHeader header;
+		ao_device* device;
+		ao_sample_format format;
+		int defaultDriver;
+		WavHeader header;
 
-    std::ifstream file;
-    file.open("explosion.wav", std::ios::binary | std::ios::in);
+		std::ifstream file;
+		file.open("explosion.wav", std::ios::binary | std::ios::in);
 
-    file.read(header.id, sizeof(header.id));
-    //assert(!std::memcmp(header.id, "RIFF", 4)); //is it a WAV file?
-    file.read((char*)&header.totalLength, sizeof(header.totalLength));
-    file.read(header.wavefmt, sizeof(header.wavefmt)); //is it the right format?
-    //assert(!std::memcmp(header.wavefmt, "WAVEfmt ", 8));
-    file.read((char*)&header.format, sizeof(header.format));
-    file.read((char*)&header.pcm, sizeof(header.pcm));
-    file.read((char*)&header.channels, sizeof(header.channels));
-    file.read((char*)&header.frequency, sizeof(header.frequency));
-    file.read((char*)&header.bytesPerSecond, sizeof(header.bytesPerSecond));
-    file.read((char*)&header.bytesByCapture, sizeof(header.bytesByCapture));
-    file.read((char*)&header.bitsPerSample, sizeof(header.bitsPerSample));
-    file.read(header.data, sizeof(header.data));
-    file.read((char*)&header.bytesInData, sizeof(header.bytesInData));
+		file.read(header.id, sizeof(header.id));
+		//assert(!std::memcmp(header.id, "RIFF", 4)); //is it a WAV file?
+		file.read((char*)&header.totalLength, sizeof(header.totalLength));
+		file.read(header.wavefmt, sizeof(header.wavefmt)); //is it the right format?
+		//assert(!std::memcmp(header.wavefmt, "WAVEfmt ", 8));
+		file.read((char*)&header.format, sizeof(header.format));
+		file.read((char*)&header.pcm, sizeof(header.pcm));
+		file.read((char*)&header.channels, sizeof(header.channels));
+		file.read((char*)&header.frequency, sizeof(header.frequency));
+		file.read((char*)&header.bytesPerSecond, sizeof(header.bytesPerSecond));
+		file.read((char*)&header.bytesByCapture, sizeof(header.bytesByCapture));
+		file.read((char*)&header.bitsPerSample, sizeof(header.bitsPerSample));
+		file.read(header.data, sizeof(header.data));
+		file.read((char*)&header.bytesInData, sizeof(header.bytesInData));
 
-    ao_initialize();
+		ao_initialize();
 
-    defaultDriver = ao_default_driver_id();
+		defaultDriver = ao_default_driver_id();
 
-    memset(&format, 0, sizeof(format));
-    format.bits = header.format;
-    format.channels = header.channels;
-    format.rate = header.frequency;
-    format.byte_format = AO_FMT_LITTLE;
+		memset(&format, 0, sizeof(format));
+		format.bits = header.format;
+		format.channels = header.channels;
+		format.rate = header.frequency;
+		format.byte_format = AO_FMT_LITTLE;
 
-    device = ao_open_live(defaultDriver, &format, NULL);
-    if (device == NULL) {
-        std::cout << "Unable to open driver" << std::endl;
-        //return;
-    }
+		device = ao_open_live(defaultDriver, &format, NULL);
+		if (device == NULL) {
+				std::cout << "Unable to open driver" << std::endl;
+				//return;
+		}
 
 
-    char* buffer = (char*)malloc(BUF_SIZE * sizeof(char));
+		char* buffer = (char*)malloc(BUF_SIZE * sizeof(char));
 
-    // determine how many BUF_SIZE chunks are in file
-    int fSize = header.bytesInData;
-    int bCount = fSize / BUF_SIZE;
+		// determine how many BUF_SIZE chunks are in file
+		int fSize = header.bytesInData;
+		int bCount = fSize / BUF_SIZE;
 
-    for (int i = 0; i < bCount; ++i) {
-        file.read(buffer, BUF_SIZE);
+		for (int i = 0; i < bCount; ++i) {
+				file.read(buffer, BUF_SIZE);
 				if(lost==1) {ao_close(device);
-		    ao_shutdown();pthread_exit((void *)NULL);}
-        ao_play(device, buffer, BUF_SIZE);
-    }
+						ao_shutdown();pthread_exit((void *)NULL);}
+				ao_play(device, buffer, BUF_SIZE);
+		}
 
-    int leftoverBytes = fSize % BUF_SIZE;
-  //  std::cout << leftoverBytes;
-    file.read(buffer, leftoverBytes);
-    memset(buffer + leftoverBytes, 0, BUF_SIZE - leftoverBytes);
+		int leftoverBytes = fSize % BUF_SIZE;
+		//  std::cout << leftoverBytes;
+		file.read(buffer, leftoverBytes);
+		memset(buffer + leftoverBytes, 0, BUF_SIZE - leftoverBytes);
 		if(lost==1) {ao_close(device);
-    ao_shutdown();pthread_exit((void *)NULL);}
-    ao_play(device, buffer, BUF_SIZE);
+				ao_shutdown();pthread_exit((void *)NULL);}
+		ao_play(device, buffer, BUF_SIZE);
 
-    ao_close(device);
-    ao_shutdown();
+		ao_close(device);
+		ao_shutdown();
 
 }
 
@@ -997,34 +997,34 @@ void checkfall()
 		}
 		for(auto &t:button_floor)
 		{
-			if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
-			{
-					fall=0;
+				if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
+				{
+						fall=0;
 
-					int i=(int)( roundoff(t.center.x)/tilewidth + floor_width/2);
-					int j= (int)(roundoff(t.center.y)/tilelength + floor_length/2);
-					auto b = buttons.find(mp(i,j));
-					if(b!=buttons.end())
-					{
-						auto p=button_record.find(b->second);
-						if(p==button_record.end()) button_record[b->second]=1;
-						else button_record[b->second] =button_record[b->second] ^ 1;
-					}
-			}
+						int i=(int)( roundoff(t.center.x)/tilewidth + floor_width/2);
+						int j= (int)(roundoff(t.center.y)/tilelength + floor_length/2);
+						auto b = buttons.find(mp(i,j));
+						if(b!=buttons.end())
+						{
+								auto p=button_record.find(b->second);
+								if(p==button_record.end()) button_record[b->second]=1;
+								else button_record[b->second] =button_record[b->second] ^ 1;
+						}
+				}
 		}
 		for(int i=0;i<(int)hidden_floor.size();++i) if(button_record[i])
 		{
-			for(auto &t:hidden_floor[i])
-				if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
-						fall=0;
+				for(auto &t:hidden_floor[i])
+						if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
+								fall=0;
 		}
 		if(abs(win_tile.x - cuboid.center.x)<=tilewidth/2 && abs(win_tile.y - cuboid.center.y)<=tilelength/2)
 		{
-			cout<<"Level WON !!"<<endl;
-			Level++;
-			game_winning_time=glfwGetTime();
-			game_won=1;
-			fall=1;
+				cout<<"Level WON !!"<<endl;
+				Level++;
+				game_winning_time=glfwGetTime();
+				game_won=1;
+				fall=1;
 		}
 		if(fall) block_falling=1;
 }
@@ -1047,7 +1047,7 @@ vector<vector<int> > read_floor(int level)
 		if(!in.is_open())
 		{
 				cout<<"Unable to open Level file"<<endl ;
-					pthread_join(Writer_thr[1],NULL);
+				pthread_join(Writer_thr[1],NULL);
 				exit(0) ;
 		}
 		in>>floor_width>>floor_length;
@@ -1101,7 +1101,7 @@ void make_floor(int level)
 						}
 						else if(floor_plan[i][j]%2==0 && floor_plan[i][j]>0)
 						{
-							//cout<<"Button at "<<i<<" "<<j<<endl ;
+								//cout<<"Button at "<<i<<" "<<j<<endl ;
 								bblock.center = glm::vec3((i - floor_width/2)*tilewidth,(j - floor_length/2)*tilelength, -(tilelength + tilewidth)/2 - tileheight/2) ;
 								button_floor.pb(bblock);
 								buttons[mp(i,j)] = floor_plan[i][j]/2-1;
@@ -1114,13 +1114,13 @@ void make_floor(int level)
 						}
 						else if(floor_plan[i][j]==-2)
 						{
-							fblock.center = glm::vec3((i - floor_width/2)*tilewidth,(j - floor_length/2)*tilelength, -(tilelength + tilewidth)/2 - tileheight/2) ;
-							fblock.is_present=1;
-							fragile_floor.pb(fblock);
+								fblock.center = glm::vec3((i - floor_width/2)*tilewidth,(j - floor_length/2)*tilelength, -(tilelength + tilewidth)/2 - tileheight/2) ;
+								fblock.is_present=1;
+								fragile_floor.pb(fblock);
 						}
 						else if(floor_plan[i][j]==-1)
 						{
-							win_tile = glm::vec3((i - floor_width/2)*tilewidth,(j - floor_length/2)*tilelength, -(tilelength + tilewidth)/2 - tileheight/2) ;
+								win_tile = glm::vec3((i - floor_width/2)*tilewidth,(j - floor_length/2)*tilelength, -(tilelength + tilewidth)/2 - tileheight/2) ;
 						}
 				}
 		}
@@ -1129,26 +1129,26 @@ void make_floor(int level)
 
 void set_hidden_floor()
 {
-	for(int x=0;x<(int)hidden_floor.size();++x)
-	{
-		auto p=button_record.find(x);
-		if(p!=button_record.end())
+		for(int x=0;x<(int)hidden_floor.size();++x)
 		{
-			if(p->second) for(auto &i:hidden_floor[x]) i.is_present=1;
-			else for(auto &i:hidden_floor[x]) i.is_present=0;
+				auto p=button_record.find(x);
+				if(p!=button_record.end())
+				{
+						if(p->second) for(auto &i:hidden_floor[x]) i.is_present=1;
+						else for(auto &i:hidden_floor[x]) i.is_present=0;
+				}
 		}
-	}
 }
 
 //SKYLINE
 game_object sk;
 void skyline_box()
 {
-	sk.center=glm::vec3(0,0,0);
-	sk.height=15*camera_radius;
-	sk.length=sk.width=sk.height;
-	sk.scale=glm::vec3(sk.width,sk.length,sk.height);
-	sk.object=createRectangle(Texture["sky"]);
+		sk.center=glm::vec3(0,0,0);
+		sk.height=15*camera_radius;
+		sk.length=sk.width=sk.height;
+		sk.scale=glm::vec3(sk.width,sk.length,sk.height);
+		sk.object=createRectangle(Texture["sky"]);
 }
 
 void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int doV, int doP)
@@ -1207,26 +1207,26 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 		}
 		for(auto &it:fragile_floor)
 		{
-			if(it.is_present)
-			{
-				Matrices.model = glm::translate(it.center) * glm::scale(it.scale);
-				MVP = VP * Matrices.model;
-				glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-				draw3DTexturedObject(it.object);
-			}
-		}
-		for(int i= 0 ; i< (int)hidden_floor.size();++i)
-		{
-			if(button_record[i])
-			{
-				for(auto &it:hidden_floor[i])
+				if(it.is_present)
 				{
 						Matrices.model = glm::translate(it.center) * glm::scale(it.scale);
 						MVP = VP * Matrices.model;
 						glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 						draw3DTexturedObject(it.object);
 				}
-			}
+		}
+		for(int i= 0 ; i< (int)hidden_floor.size();++i)
+		{
+				if(button_record[i])
+				{
+						for(auto &it:hidden_floor[i])
+						{
+								Matrices.model = glm::translate(it.center) * glm::scale(it.scale);
+								MVP = VP * Matrices.model;
+								glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+								draw3DTexturedObject(it.object);
+						}
+				}
 		}
 		//drawing cuboid
 		Matrices.model = Rotatecuboid(cuboid.angle,normalize(cross(cuboid.up,cuboid.angle)),cuboid.up) * glm::scale(cuboid.scale);
@@ -1345,7 +1345,7 @@ int main (int argc, char** argv)
 				// Poll for Keyboard and mouse events
 				glfwPollEvents();
 		}
-			pthread_join(Writer_thr[1],NULL);
+		pthread_join(Writer_thr[1],NULL);
 		glfwTerminate();
 		//    exit(EXIT_SUCCESS);
 }
