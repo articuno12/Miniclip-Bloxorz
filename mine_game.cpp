@@ -416,10 +416,10 @@ void top_view()
 }
 void tower_view()
 {
-	Camera.center=normalize(glm::vec3(0,1,1)) * camera_radius;
-	    Camera.up = normalize(cross(Camera.center,glm::vec3(-1,0,0))) ;
-			Camera.angle=glm::vec3(0,0,0);
-			update_Camera();
+		Camera.center=normalize(glm::vec3(0,1,1)) * camera_radius;
+		Camera.up = normalize(cross(Camera.center,glm::vec3(-1,0,0))) ;
+		Camera.angle=glm::vec3(0,0,0);
+		update_Camera();
 }
 glm::vec3 GetMouseCoordinates(void)
 {
@@ -432,18 +432,18 @@ void helicam_view()
 {
 		glm::vec3 Mouse = GetMouseCoordinates() ;
 		camera_move(0,-(Mouse.x - mouse_previous.x)/1000) ;
-    camera_move(1,(Mouse.y - mouse_previous.y)/1000) ;
+		camera_move(1,(Mouse.y - mouse_previous.y)/1000) ;
 		update_Camera();
 }
 void mousefollow_view()
 {
-	glm::vec3 d= block_last_pos.front() - cuboid.center;
-	Camera.center=normalize(d) * camera_radius + cuboid.center;
-	Camera.center.z=abs(Camera.center.z);
-	d=cuboid.center-Camera.center;
-	Camera.angle=cuboid.center;
-	Camera.up = normalize(glm::vec3(0,0,1) - (d) * dot(glm::vec3(0,0,1),d)) ;
-	update_Camera();
+		glm::vec3 d= block_last_pos.front() - cuboid.center;
+		Camera.center=normalize(d) * camera_radius + cuboid.center;
+		Camera.center.z=abs(Camera.center.z);
+		d=cuboid.center-Camera.center;
+		Camera.angle=cuboid.center;
+		Camera.up = normalize(glm::vec3(0,0,1) - (d) * dot(glm::vec3(0,0,1),d)) ;
+		update_Camera();
 }
 //* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
@@ -462,17 +462,17 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 								// do something ..
 								break;
 						case GLFW_KEY_RIGHT:
-									if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_h=1,rotate_block_d=1;
-									break;
+								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_h=1,rotate_block_d=1;
+								break;
 						case GLFW_KEY_LEFT:
-										if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_h=1,rotate_block_d=-1;
-										break;
+								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_h=1,rotate_block_d=-1;
+								break;
 						case GLFW_KEY_UP:
-						if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_y=1,rotate_block_d=1;
-						break;
+								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_y=1,rotate_block_d=1;
+								break;
 						case GLFW_KEY_DOWN:
-						if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_y=1,rotate_block_d=-1;
-						break;
+								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_y=1,rotate_block_d=-1;
+								break;
 						default:
 								break;
 				}
@@ -492,18 +492,18 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 						case GLFW_KEY_ESCAPE:
 								quit(window);
 								break;
-								case GLFW_KEY_UP:
+						case GLFW_KEY_UP:
 								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_y=1,rotate_block_d=1;
 								break;
-								case GLFW_KEY_DOWN:
+						case GLFW_KEY_DOWN:
 								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_y=1,rotate_block_d=-1;
 								break;
-								case GLFW_KEY_RIGHT:
-											if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_h=1,rotate_block_d=1;
-											break;
-								case GLFW_KEY_LEFT:
-												if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_h=1,rotate_block_d=-1;
-												break;
+						case GLFW_KEY_RIGHT:
+								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_h=1,rotate_block_d=1;
+								break;
+						case GLFW_KEY_LEFT:
+								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_h=1,rotate_block_d=-1;
+								break;
 						default:
 								break;
 				}
@@ -531,13 +531,13 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
 						set_camera_radius(-1);
 						break;
 				case 't':
-							top_view();
-							break;
+						top_view();
+						break;
 				case 'o':
-								tower_view();
-								break;
+						tower_view();
+						break;
 				case 's':
-				mousefollow=1;
+						mousefollow=1;
 				default:
 						break;
 		}
@@ -797,114 +797,114 @@ float currentBlockHeight()
 }
 float roundoff(float x)
 {
-    if(abs(x - ceil(x)) > abs(x - floor(x))) return floor(x) ;
-    return ceil(x) ;
+		if(abs(x - ceil(x)) > abs(x - floor(x))) return floor(x) ;
+		return ceil(x) ;
 }
 void find_horizontal_rotation_axis(float d)
 {
-	if(update_block_h)
-	{
-		if(no_of_rotations-- == 0)
+		if(update_block_h)
 		{
-			update_block_h=0,rotate_block_h=0,no_of_rotations=90/block_rotating_degree;
+				if(no_of_rotations-- == 0)
+				{
+						update_block_h=0,rotate_block_h=0,no_of_rotations=90/block_rotating_degree;
+				}
+				return ;
 		}
-		return ;
-	}
-	rightb=RightOfBlock();
-	no_of_rotations--;
-	update_block_h=1;
-	if(abs(dot(rightb,cuboid.up))>0.98)
-	{
-		cuboid_ref_point=rightb * d * (tilewidth) + glm::vec3(0,0,1)*((float)-1 * (tilewidth)/2);
-	}
-	else
-	{
-		cuboid_ref_point=rightb * d * (tilewidth/2)+glm::vec3(0,0,1)*((float)-1 * currentBlockHeight()/2);
-	}
-	rotation_fixed_point = cuboid_ref_point + cuboid.center;
+		rightb=RightOfBlock();
+		no_of_rotations--;
+		update_block_h=1;
+		if(abs(dot(rightb,cuboid.up))>0.98)
+		{
+				cuboid_ref_point=rightb * d * (tilewidth) + glm::vec3(0,0,1)*((float)-1 * (tilewidth)/2);
+		}
+		else
+		{
+				cuboid_ref_point=rightb * d * (tilewidth/2)+glm::vec3(0,0,1)*((float)-1 * currentBlockHeight()/2);
+		}
+		rotation_fixed_point = cuboid_ref_point + cuboid.center;
 }
 void move_block_h(float d)
 {
 
-	find_horizontal_rotation_axis(d);
-	cuboid.up=rotate(cuboid.up,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),rightb)));
-	cuboid.angle=rotate(cuboid.angle,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),rightb)));
-	cuboid_ref_point=rotate(cuboid_ref_point,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),rightb)));
-	cuboid.center=rotation_fixed_point - cuboid_ref_point;
-	if(rotate_block_h==0)
-	{
-		for(int i=0;i<3;++i)
+		find_horizontal_rotation_axis(d);
+		cuboid.up=rotate(cuboid.up,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),rightb)));
+		cuboid.angle=rotate(cuboid.angle,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),rightb)));
+		cuboid_ref_point=rotate(cuboid_ref_point,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),rightb)));
+		cuboid.center=rotation_fixed_point - cuboid_ref_point;
+		if(rotate_block_h==0)
 		{
-			cuboid.angle[i]=roundoff(cuboid.angle[i]);
-			cuboid.up[i]=roundoff(cuboid.up[i]);
-			cuboid.center[i]=roundoff(cuboid.center[i]);
+				for(int i=0;i<3;++i)
+				{
+						cuboid.angle[i]=roundoff(cuboid.angle[i]);
+						cuboid.up[i]=roundoff(cuboid.up[i]);
+						cuboid.center[i]=roundoff(cuboid.center[i]);
+				}
+				block_last_pos.push(cuboid.center); block_last_pos.pop();
+				block_moving=1;
 		}
-		block_last_pos.push(cuboid.center); block_last_pos.pop();
-		block_moving=1;
-	}
 }
 void find_vertical_rotation_axis(float d)
 {
-	if(update_block_y)
-	{
-		if(no_of_rotations-- == 0)
+		if(update_block_y)
 		{
-			update_block_y=0,rotate_block_y=0,no_of_rotations=90/block_rotating_degree;
+				if(no_of_rotations-- == 0)
+				{
+						update_block_y=0,rotate_block_y=0,no_of_rotations=90/block_rotating_degree;
+				}
+				return ;
 		}
-		return ;
-	}
-	frontb=FrontOfBlock();
-	no_of_rotations--;
-//	glm::vec3 r=FrontOfBlock();
-	update_block_y=1;
-	if(abs(dot(frontb,cuboid.up))>0.98)
-	{
-		cuboid_ref_point=frontb * d * (tilewidth) + glm::vec3(0,0,1)*((float)-1 * (currentBlockHeight())/2);
-	}
-	else
-	{
-		cuboid_ref_point=frontb * d * (tilewidth/2)+glm::vec3(0,0,1)*((float)-1 * currentBlockHeight()/2);
-	}
-	rotation_fixed_point = cuboid_ref_point + cuboid.center;
+		frontb=FrontOfBlock();
+		no_of_rotations--;
+		//	glm::vec3 r=FrontOfBlock();
+		update_block_y=1;
+		if(abs(dot(frontb,cuboid.up))>0.98)
+		{
+				cuboid_ref_point=frontb * d * (tilewidth) + glm::vec3(0,0,1)*((float)-1 * (currentBlockHeight())/2);
+		}
+		else
+		{
+				cuboid_ref_point=frontb * d * (tilewidth/2)+glm::vec3(0,0,1)*((float)-1 * currentBlockHeight()/2);
+		}
+		rotation_fixed_point = cuboid_ref_point + cuboid.center;
 }
 void move_block_v(float d)
 {
-	find_vertical_rotation_axis(d);
-	cuboid.up=rotate(cuboid.up,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),frontb)));
-	cuboid.angle=rotate(cuboid.angle,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),frontb)));
-	cuboid_ref_point=rotate(cuboid_ref_point,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),frontb)));
-	cuboid.center=rotation_fixed_point - cuboid_ref_point;
-	if(rotate_block_y==0)
-	{
-		for(int i=0;i<3;++i)
+		find_vertical_rotation_axis(d);
+		cuboid.up=rotate(cuboid.up,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),frontb)));
+		cuboid.angle=rotate(cuboid.angle,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),frontb)));
+		cuboid_ref_point=rotate(cuboid_ref_point,cuboid_rotation_angle*d,normalize(cross(glm::vec3(0,0,1),frontb)));
+		cuboid.center=rotation_fixed_point - cuboid_ref_point;
+		if(rotate_block_y==0)
 		{
-			cuboid.angle[i]=roundoff(cuboid.angle[i]);
-			cuboid.up[i]=roundoff(cuboid.up[i]);
-			cuboid.center[i]=roundoff(cuboid.center[i]);
+				for(int i=0;i<3;++i)
+				{
+						cuboid.angle[i]=roundoff(cuboid.angle[i]);
+						cuboid.up[i]=roundoff(cuboid.up[i]);
+						cuboid.center[i]=roundoff(cuboid.center[i]);
+				}
+				block_last_pos.push(cuboid.center); block_last_pos.pop();
+				block_moving=1;
 		}
-		block_last_pos.push(cuboid.center); block_last_pos.pop();
-		block_moving=1;
-	}
 }
 
 void checkfall()
 {
-	block_moving=0;
-	bool fall=true;
-	for(auto &t:normal_floor)
-	{
-		if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
+		block_moving=0;
+		bool fall=true;
+		for(auto &t:normal_floor)
 		{
-			fall=0;
-			break;
+				if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
+				{
+						fall=0;
+						break;
+				}
 		}
-	}
-	if(fall) block_falling=1;
+		if(fall) block_falling=1;
 }
 void blockfall()
 {
-cuboid.center.z -= BlockFallingSpeed ;
-    if(abs(cuboid.center.z) >= 2*camera_radius) cuboid.center.z = 2*camera_radius ;
+		cuboid.center.z -= BlockFallingSpeed ;
+		if(abs(cuboid.center.z) >= 2*camera_radius) cuboid.center.z = 2*camera_radius ;
 }
 
 /***********
@@ -1039,7 +1039,7 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 
 /* Initialise glfw window, I/O callbacks and the renderer to use */
 /* Nothing to Edit here */
- // window desciptor/handle
+// window desciptor/handle
 GLFWwindow* initGLFW (int width, int height){
 
 		glfwSetErrorCallback(error_callback);
