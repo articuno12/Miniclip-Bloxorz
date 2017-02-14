@@ -1025,9 +1025,14 @@ void set_hidden_floor()
 }
 
 //SKYLINE
+game_object sk;
 void skyline_box()
 {
-	
+	sk.center=glm::vec3(0,0,0);
+	sk.height=15*camera_radius;
+	sk.length=sk.width=sk.height;
+	sk.scale=glm::vec3(sk.width,sk.length,sk.height);
+	sk.object=createRectangle(Texture["sky"]);
 }
 
 void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int doV, int doP)
@@ -1062,6 +1067,13 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 		else if(rotate_block_y) move_block_v(rotate_block_d);
 		// Copy MVP to texture shaders
 		glUniformMatrix4fv(Matrices.TexMatrixID, 1, GL_FALSE, &MVP[0][0]);
+		//skyline boxe
+
+		Matrices.model = glm::translate(sk.center) * glm::scale(sk.scale);
+		MVP = VP * Matrices.model;
+		glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+		draw3DTexturedObject(sk.object);
+
 		//floor
 		for(auto &it:normal_floor)
 		{
@@ -1138,6 +1150,7 @@ void set_textures()
 		Texture["hidden_block"]=createTexture("Images/hidden_block.jpg");
 		Texture["button_block"]=createTexture("Images/button_floor.png");
 		Texture["cuboid"]=createTexture("Images/middle.png");
+		Texture["sky"]=createTexture("Images/mars.jpg");
 }
 /* Initialize the OpenGL rendering properties */
 /* Add all the models to be created here */
@@ -1155,6 +1168,7 @@ void initGL (GLFWwindow* window, int width, int height)
 		GLint textureID5 = createTexture("Images/middle.jpg");
 		createRectangle (textureID5);
 		block_last_pos.push(glm::vec3(1,0,0));
+		skyline_box();
 		create_cuboid();
 		make_floor(1);
 		// Create and compile our GLSL program from the shaders
