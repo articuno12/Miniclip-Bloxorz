@@ -426,7 +426,7 @@ glm::vec3 GetMouseCoordinates(void)
 {
 		double CursorX,CursorY ;
 		glfwGetCursorPos(window, &CursorX, &CursorY) ;
-		cout<<CursorX<<" "<<CursorY<<endl ;
+		//cout<<CursorX<<" "<<CursorY<<endl ;
 		return glm::vec3(CursorX,CursorY,0) ;
 }
 void helicam_view()
@@ -888,7 +888,7 @@ void move_block_v(float d)
 		}
 }
 //just a declaration
-void set_hidden_floor();
+// void set_hidden_floor();
 void checkfall()
 {
 		block_moving=0;
@@ -898,17 +898,6 @@ void checkfall()
 				if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
 				{
 						fall=0;
-
-						int i=(int)(tilewidth * roundoff(t.center.x) + floor_width/2);
-						int j= (int)(tilelength * roundoff(t.center.x) + floor_length/2);
-						auto b = buttons.find(mp(i,j));
-						if(b!=buttons.end())
-						{
-							auto p=button_record.find(b->second);
-							if(p==button_record.end()) button_record[b->second]=1;
-							else button_record[b->second] =button_record[b->second] ^ 1;
-						}
-						set_hidden_floor();
 				}
 		}
 		for(auto &t:button_floor)
@@ -917,28 +906,25 @@ void checkfall()
 			{
 					fall=0;
 
-					int i=(int)(tilewidth * roundoff(t.center.x) + floor_width/2);
-					int j= (int)(tilelength * roundoff(t.center.x) + floor_length/2);
+					int i=(int)( roundoff(t.center.x)/tilewidth + floor_width/2);
+					int j= (int)(roundoff(t.center.y)/tilelength + floor_length/2);
+					cout<<"i = "<<i<<" j = "<<j<<endl ;
 					auto b = buttons.find(mp(i,j));
 					if(b!=buttons.end())
 					{
+						cout<<"Button pressed"<<endl ;
 						auto p=button_record.find(b->second);
 						if(p==button_record.end()) button_record[b->second]=1;
 						else button_record[b->second] =button_record[b->second] ^ 1;
 					}
-					set_hidden_floor();
+					// set_hidden_floor();
 			}
 		}
-		for(int i=0;i<(int)hidden_floor.size();++i)
+		for(int i=0;i<(int)hidden_floor.size();++i) if(button_record[i])
 		{
 			for(auto &t:hidden_floor[i])
-			if(t.is_present)
-			{
 				if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
-				{
 						fall=0;
-					}
-			}
 		}
 		if(fall) block_falling=1;
 }
@@ -1007,8 +993,9 @@ void make_floor(int level)
 								block.center = glm::vec3((i - floor_width/2)*tilewidth,(j - floor_length/2)*tilelength, -(tilelength + tilewidth)/2 - tileheight/2) ;
 								normal_floor.pb(block);
 						}
-						else if(floor_plan[i][j]%2==0 && floor_plan[i][j]!=0)
+						else if(floor_plan[i][j]%2==0 && floor_plan[i][j]>0)
 						{
+							cout<<"Button at "<<i<<" "<<j<<endl ;
 								bblock.center = glm::vec3((i - floor_width/2)*tilewidth,(j - floor_length/2)*tilelength, -(tilelength + tilewidth)/2 - tileheight/2) ;
 								button_floor.pb(bblock);
 								buttons[mp(i,j)] = floor_plan[i][j]/2-1;
@@ -1035,6 +1022,12 @@ void set_hidden_floor()
 			else for(auto &i:hidden_floor[x]) i.is_present=0;
 		}
 	}
+}
+
+//SKYLINE
+void skyline_box()
+{
+	
 }
 
 void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int doV, int doP)
@@ -1084,16 +1077,16 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 				glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 				draw3DTexturedObject(it.object);
 		}
-		for(auto &i:hidden_floor)
+		for(int i= 0 ; i< (int)hidden_floor.size();++i)
 		{
-			for(auto &it:i)
+			if(button_record[i])
 			{
-				if(it.is_present)
+				for(auto &it:hidden_floor[i])
 				{
-					Matrices.model = glm::translate(it.center) * glm::scale(it.scale);
-					MVP = VP * Matrices.model;
-					glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-					draw3DTexturedObject(it.object);
+						Matrices.model = glm::translate(it.center) * glm::scale(it.scale);
+						MVP = VP * Matrices.model;
+						glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+						draw3DTexturedObject(it.object);
 				}
 			}
 		}
