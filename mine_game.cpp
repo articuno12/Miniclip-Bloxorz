@@ -92,7 +92,7 @@ float camera_radius=12;
 float rectangle_rotation = 0;
 game_object Camera;
 map<string,GLuint> Texture;
-vector<game_object> normal_floor,button_floor;
+vector<game_object> normal_floor,button_floor,fragile_floor;
 vector<vector<game_object> > hidden_floor;
 map<pair<int,int> , int> buttons;
 map<int,bool> button_record;
@@ -112,6 +112,11 @@ float BlockFallingSpeed=0.08;
 bool helicam=0,mousefollow=0;
 GLFWwindow* window;
 queue<glm::vec3> block_last_pos;
+
+glm::vec3 win_tile=glm::vec3(0,0,0);
+bool game_won=0;
+double game_winning_time;
+int Level=1;
 /* Function to load Shaders - Use it as it is */
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path)
 {
@@ -887,8 +892,7 @@ void move_block_v(float d)
 				block_moving=1;
 		}
 }
-//just a declaration
-// void set_hidden_floor();
+
 void checkfall()
 {
 		block_moving=0;
@@ -898,6 +902,16 @@ void checkfall()
 				if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
 				{
 						fall=0;
+						break;
+				}
+		}
+		for(auto &t:fragile_floor)
+		{
+				if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
+				{
+						if(currentBlockHeight()==(tilewidth+tilelength)) fall=true,t.is_present=0;
+						else fall=0;
+						break;
 				}
 		}
 		for(auto &t:button_floor)
@@ -908,16 +922,13 @@ void checkfall()
 
 					int i=(int)( roundoff(t.center.x)/tilewidth + floor_width/2);
 					int j= (int)(roundoff(t.center.y)/tilelength + floor_length/2);
-				//	cout<<"i = "<<i<<" j = "<<j<<endl ;
 					auto b = buttons.find(mp(i,j));
 					if(b!=buttons.end())
 					{
-						cout<<"Button pressed"<<endl ;
 						auto p=button_record.find(b->second);
 						if(p==button_record.end()) button_record[b->second]=1;
 						else button_record[b->second] =button_record[b->second] ^ 1;
 					}
-					// set_hidden_floor();
 			}
 		}
 		for(int i=0;i<(int)hidden_floor.size();++i) if(button_record[i])
@@ -925,6 +936,14 @@ void checkfall()
 			for(auto &t:hidden_floor[i])
 				if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
 						fall=0;
+		}
+		if(abs(win_tile.x - cuboid.center.x)<=tilewidth/2 && abs(win_tile.y - cuboid.center.y)<=tilelength/2)
+		{
+			cout<<"Level WON !!"<<endl;
+			Level++;
+			game_winning_time=glfwGetTime();
+			game_won=1;
+			fall=1;
 		}
 		if(fall) block_falling=1;
 }
@@ -965,7 +984,9 @@ vector<vector<int> > read_floor(int level)
 }
 void make_floor(int level)
 {
-		normal_floor.clear(),hidden_floor.clear(),button_floor.clear();
+		normal_floor.clear(),hidden_floor.clear(),button_floor.clear();fragile_floor.clear();
+		button_record.clear(); buttons.clear();
+		game_won=0;
 		vector<vector<int> > floor_plan; floor_plan=read_floor(level);
 		float del=0.06;
 		int max_n=0;
@@ -975,15 +996,18 @@ void make_floor(int level)
 		}
 		//for hidden blocks numbering is 2n+1 so 2n+1/2 will give number.
 		hidden_floor.resize(max_n/2);
-		game_object block,hblock,bblock;
+		game_object block,hblock,bblock,fblock;
 		block.object=createRectangle(Texture["live_block"]);
 		block.width=tilewidth;block.height=tileheight;block.length=tilelength;
 		block.scale=glm::vec3(block.width-del,block.length-del,block.height);
 		block.rotation_axis=glm::vec3(0,0,1);
 		hblock.object=createRectangle(Texture["hidden_block"]);
 		bblock.object=createRectangle(Texture["button_block"]);
-		bblock.scale=hblock.scale=block.scale;
-		bblock.width=hblock.width=block.width;bblock.height=hblock.height=block.height;bblock.length=hblock.length=block.length;
+		fblock.object=createRectangle(Texture["fragile"]);
+		fblock.scale=bblock.scale=hblock.scale=block.scale;
+		fblock.width=bblock.width=hblock.width=block.width;
+		fblock.height=bblock.height=hblock.height=block.height;
+		fblock.length=bblock.length=hblock.length=block.length;
 		for(int i=0;i<floor_width;++i)
 		{
 				for(int j=0;j<floor_length;++j)
@@ -1005,6 +1029,16 @@ void make_floor(int level)
 								hblock.center = glm::vec3((i - floor_width/2)*tilewidth,(j - floor_length/2)*tilelength, -(tilelength + tilewidth)/2 - tileheight/2) ;
 								hblock.is_present=0;
 								hidden_floor[floor_plan[i][j]/2-1].pb(hblock);
+						}
+						else if(floor_plan[i][j]==-2)
+						{
+							fblock.center = glm::vec3((i - floor_width/2)*tilewidth,(j - floor_length/2)*tilelength, -(tilelength + tilewidth)/2 - tileheight/2) ;
+							fblock.is_present=1;
+							fragile_floor.pb(fblock);
+						}
+						else if(floor_plan[i][j]==-1)
+						{
+							win_tile = glm::vec3((i - floor_width/2)*tilewidth,(j - floor_length/2)*tilelength, -(tilelength + tilewidth)/2 - tileheight/2) ;
 						}
 				}
 		}
@@ -1089,6 +1123,16 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 				glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 				draw3DTexturedObject(it.object);
 		}
+		for(auto &it:fragile_floor)
+		{
+			if(it.is_present)
+			{
+				Matrices.model = glm::translate(it.center) * glm::scale(it.scale);
+				MVP = VP * Matrices.model;
+				glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+				draw3DTexturedObject(it.object);
+			}
+		}
 		for(int i= 0 ; i< (int)hidden_floor.size();++i)
 		{
 			if(button_record[i])
@@ -1149,6 +1193,7 @@ void set_textures()
 		Texture["live_block"]=createTexture("Images/live_block.jpg");
 		Texture["hidden_block"]=createTexture("Images/hidden_block.jpg");
 		Texture["button_block"]=createTexture("Images/button_floor.png");
+		Texture["fragile"]=createTexture("Images/fragile.jpg");
 		Texture["cuboid"]=createTexture("Images/middle.jpg");
 		Texture["sky"]=createTexture("Images/mars.jpg");
 }
@@ -1170,7 +1215,7 @@ void initGL (GLFWwindow* window, int width, int height)
 		block_last_pos.push(glm::vec3(1,0,0));
 		skyline_box();
 		create_cuboid();
-		make_floor(1);
+		make_floor(Level);
 		// Create and compile our GLSL program from the shaders
 		programID = LoadShaders( "shader.vert", "shader.frag" );
 		waterProgramID = LoadShaders ( "watershader.vert", "watershader.frag");
