@@ -106,7 +106,6 @@ GLuint programID, waterProgramID, fontProgramID, textureProgramID;
 double last_update_time, current_time;
 game_object cuboid;
 float camera_radius=12;
-float rectangle_rotation = 0;
 game_object Camera;
 map<string,GLuint> Texture;
 vector<game_object> normal_floor,button_floor,fragile_floor;
@@ -132,9 +131,9 @@ GLFWwindow* window;
 queue<glm::vec3> block_last_pos;
 
 glm::vec3 win_tile=glm::vec3(0,0,0);
-bool game_won=0,lost=0,start=0;
+bool level_won=0,lost=0,start=0;
 double game_winning_time;
-int Level=1;
+int Level=1; int steps=0;
 /* Function to load Shaders - Use it as it is */
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path)
 {
@@ -168,7 +167,7 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 		int InfoLogLength;
 
 		// Compile Vertex Shader
-		cout << "Compiling shader : " <<  vertex_file_path << endl;
+		//cout << "Compiling shader : " <<  vertex_file_path << endl;
 		char const * VertexSourcePointer = VertexShaderCode.c_str();
 		glShaderSource(VertexShaderID, 1, &VertexSourcePointer , NULL);
 		glCompileShader(VertexShaderID);
@@ -178,10 +177,10 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 		glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
 		std::vector<char> VertexShaderErrorMessage( max(InfoLogLength, int(1)) );
 		glGetShaderInfoLog(VertexShaderID, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
-		cout << VertexShaderErrorMessage.data() << endl;
+		//cout << VertexShaderErrorMessage.data() << endl;
 
 		// Compile Fragment Shader
-		cout << "Compiling shader : " << fragment_file_path << endl;
+		//cout << "Compiling shader : " << fragment_file_path << endl;
 		char const * FragmentSourcePointer = FragmentShaderCode.c_str();
 		glShaderSource(FragmentShaderID, 1, &FragmentSourcePointer , NULL);
 		glCompileShader(FragmentShaderID);
@@ -191,10 +190,10 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 		glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
 		std::vector<char> FragmentShaderErrorMessage( max(InfoLogLength, int(1)) );
 		glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
-		cout << FragmentShaderErrorMessage.data() << endl;
+	//	cout << FragmentShaderErrorMessage.data() << endl;
 
 		// Link the program
-		cout << "Linking program" << endl;
+	//	cout << "Linking program" << endl;
 		GLuint ProgramID = glCreateProgram();
 		glAttachShader(ProgramID, VertexShaderID);
 		glAttachShader(ProgramID, FragmentShaderID);
@@ -205,7 +204,7 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 		glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &InfoLogLength);
 		std::vector<char> ProgramErrorMessage( max(InfoLogLength, int(1)) );
 		glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
-		cout << ProgramErrorMessage.data() << endl;
+		//cout << ProgramErrorMessage.data() << endl;
 
 		glDeleteShader(VertexShaderID);
 		glDeleteShader(FragmentShaderID);
@@ -222,6 +221,7 @@ void quit(GLFWwindow *window)
 {
 		glfwDestroyWindow(window);
 		glfwTerminate();
+		pthread_join(Writer_thr[1],NULL);
 		exit(EXIT_SUCCESS);
 }
 void* Writer(void * i)
@@ -549,16 +549,16 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 								// do something ..
 								break;
 						case GLFW_KEY_RIGHT:
-								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_h=1,rotate_block_d=1;
+								if(!rotate_block_h && !rotate_block_y && !block_falling) steps++,rotate_block_h=1,rotate_block_d=1;
 								break;
 						case GLFW_KEY_LEFT:
-								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_h=1,rotate_block_d=-1;
+								if(!rotate_block_h && !rotate_block_y && !block_falling) steps++,rotate_block_h=1,rotate_block_d=-1;
 								break;
 						case GLFW_KEY_UP:
-								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_y=1,rotate_block_d=1;
+								if(!rotate_block_h && !rotate_block_y && !block_falling) steps++,rotate_block_y=1,rotate_block_d=1;
 								break;
 						case GLFW_KEY_DOWN:
-								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_y=1,rotate_block_d=-1;
+								if(!rotate_block_h && !rotate_block_y && !block_falling) steps++,rotate_block_y=1,rotate_block_d=-1;
 								break;
 						default:
 								break;
@@ -580,16 +580,16 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 								quit(window);
 								break;
 						case GLFW_KEY_UP:
-								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_y=1,rotate_block_d=1;
+								if(!rotate_block_h && !rotate_block_y && !block_falling) steps++,rotate_block_y=1,rotate_block_d=1;
 								break;
 						case GLFW_KEY_DOWN:
-								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_y=1,rotate_block_d=-1;
+								if(!rotate_block_h && !rotate_block_y && !block_falling) steps++,rotate_block_y=1,rotate_block_d=-1;
 								break;
 						case GLFW_KEY_RIGHT:
-								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_h=1,rotate_block_d=1;
+								if(!rotate_block_h && !rotate_block_y && !block_falling) steps++,rotate_block_h=1,rotate_block_d=1;
 								break;
 						case GLFW_KEY_LEFT:
-								if(!rotate_block_h && !rotate_block_y && !block_falling) rotate_block_h=1,rotate_block_d=-1;
+								if(!rotate_block_h && !rotate_block_y && !block_falling) steps++,rotate_block_h=1,rotate_block_d=-1;
 								break;
 						default:
 								break;
@@ -1025,12 +1025,12 @@ void checkfall()
 		if(abs(win_tile.x - cuboid.center.x)<=tilewidth/2 && abs(win_tile.y - cuboid.center.y)<=tilelength/2 && fall)
 		{
 				cout<<"Level WON !!"<<endl;
-				Level++;
 				game_winning_time=glfwGetTime();
-				game_won=1;
-				fall=1;
+				level_won=1;
+				block_falling=1;
+				return;
 		}
-		if(fall && b==0) block_falling=1;
+		if(fall) lost=1,game_winning_time=glfwGetTime(),block_falling=1;
 		else if(fall && b==1)
 		{
 			shift_fall();
@@ -1074,9 +1074,14 @@ vector<vector<int> > read_floor(int level)
 }
 void make_floor(int level)
 {
+		if(Level==2)
+		{
+			cout<<"GAME_WON"<<endl;
+			pthread_join(Writer_thr[1],NULL);
+			exit(0);
+		}
 		normal_floor.clear(),hidden_floor.clear(),button_floor.clear();fragile_floor.clear();
 		button_record.clear(); buttons.clear();
-		game_won=0;
 		start=1;
 		vector<vector<int> > floor_plan; floor_plan=read_floor(level);
 		float del=0.06;
@@ -1130,7 +1135,7 @@ void make_floor(int level)
 						else if(floor_plan[i][j]==-1)
 						{
 								win_tile = glm::vec3((i - floor_width/2)*tilewidth,(j - floor_length/2)*tilelength, -(tilelength + tilewidth)/2 - tileheight/2) ;
-								cout<<win_tile.x<<" "<<win_tile.y<<endl ;
+
 						}
 				}
 		}
@@ -1161,8 +1166,37 @@ void skyline_box()
 		sk.object=createRectangle(Texture["sky"]);
 }
 
+void SetGame(void)
+{
+    while(!block_last_pos.empty()) block_last_pos.pop();
+    block_last_pos.push(glm::vec3(1,0,0)) ;
+		win_tile=glm::vec3(0,0,0);
+		update_block_h=false;
+		rotate_block_h=false;
+		rotate_block_y=false;
+		update_block_y=false;
+		block_moving=false,block_falling=false;
+		set_Camera();
+    make_floor(Level);
+    create_cuboid() ;
+}
+
 void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int doV, int doP)
 {
+	if(current_time - game_winning_time > 5 && level_won)
+	{
+			block_falling = false ;
+			level_won = false ;
+			++Level ;
+			steps=0;
+			SetGame() ;
+	}
+	else if(current_time - game_winning_time > 5 && lost==1)
+	{
+		cout<<"YOU LOSE "<<endl;
+		pthread_join(Writer_thr[1],NULL);
+		exit(0);
+	}
 		int fbwidth, fbheight;
 		glfwGetFramebufferSize(window, &fbwidth, &fbheight);
 		glViewport((int)(x*fbwidth), (int)(y*fbheight), (int)(w*fbwidth), (int)(h*fbheight));
@@ -1193,6 +1227,8 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 		else if(rotate_block_y) move_block_v(rotate_block_d);
 		// Copy MVP to texture shaders
 		glUniformMatrix4fv(Matrices.TexMatrixID, 1, GL_FALSE, &MVP[0][0]);
+
+		cout<<"STEPS"<<" "<<steps<<endl;
 		//skyline boxe
 
 		Matrices.model = glm::translate(sk.center) * glm::scale(sk.scale);
@@ -1254,6 +1290,7 @@ GLFWwindow* initGLFW (int width, int height){
 
 		glfwSetErrorCallback(error_callback);
 		if (!glfwInit()) {
+			pthread_join(Writer_thr[1],NULL);
 				exit(EXIT_FAILURE);
 		}
 
@@ -1266,6 +1303,7 @@ GLFWwindow* initGLFW (int width, int height){
 
 		if (!window) {
 				exit(EXIT_FAILURE);
+				pthread_join(Writer_thr[1],NULL);
 				glfwTerminate();
 		}
 
