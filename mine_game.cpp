@@ -1070,6 +1070,7 @@ void checkfall()
 		if(fall) lost=1,game_winning_time=glfwGetTime(),block_falling=1;
 		else if(!fall && b==1)
 		{
+				if(currentBlockHeight()==tilewidth)
 				shift_fall();
 		}
 }
@@ -1111,7 +1112,7 @@ vector<vector<int> > read_floor(int level)
 }
 void make_floor(int level)
 {
-		if(Level==2)
+		if(Level==3)
 		{
 				cout<<"GAME_WON"<<endl;
 				pthread_join(Writer_thr[1],NULL);
