@@ -535,6 +535,7 @@ void mousefollow_view()
 }
 //just declaration
 float currentBlockHeight(void);
+
 void block_view()
 {
 Camera.center = cuboid.center + glm::vec3(0,0,1) * (currentBlockHeight()) ;
@@ -667,19 +668,10 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods)
 }
 void mousescroll(GLFWwindow* window, double xoffset, double yoffset)
 {
-		// if (yoffset==-1) {
-		//     camera_fov*=1.1;
-		// }
-		// else if(yoffset==1){
-		//     camera_fov/=1.1; //make it bigger than current size
-		// }
-		// if(camera_fov>=2){
-		// 	camera_fov=2;
-		// }
-		// if(camera_fov<=0.5){
-		// 	camera_fov=0.5;
-		// }
-		// reshapeWindow(window,700,1400);
+		if(yoffset==-1)
+			set_camera_radius(1);
+			else
+			set_camera_radius(-1);
 }
 
 
@@ -993,12 +985,37 @@ void move_block_v(float d)
 }
 void shift_fall(void)
 {
-
+	bool BlockAtEdge=0;
+	glm::vec3 C1 = cuboid.center - cuboid.up * ((tilelength + tilewidth)/4) ;
+glm::vec3 C2 = cuboid.center + cuboid.up * ((tilelength + tilewidth)/4) ;
+if((C2.x/tilelength + floor_length/2) > (floor_length - 1) ||(C2.x/tilelength + floor_length/2)<0|| (C2.y/tilewidth + floor_width/2) > (floor_width - 1) || (C2.y/tilewidth + floor_width/2)<0) BlockAtEdge = true ;
+if((C1.x/tilelength + floor_length/2) > (floor_length - 1)  || (C1.x/tilelength + floor_length/2)<0|| (C1.y/tilewidth + floor_width/2) > (floor_width - 1) || (C1.y/tilewidth + floor_width/2)<0) BlockAtEdge = true ;
+// Block at the edge.! Block Must fall
+if(BlockAtEdge)
+{
+		glm::vec3 right = RightOfBlock() , front = FrontOfBlock() ;
+		if(abs(dot(cuboid.up,right)) > 0.98)
+		{
+				//cout<<"Force Moving along H"<<endl ;
+				 rotate_block_h = true ;
+				if(dot(right,glm::vec3(0,0,0) - cuboid.center) > 0 ) rotate_block_d = -1 ;
+				else block_moving = 1 ;
+		}
+		else
+		{
+				//cout<<"Force Moving along V"<<endl ;
+				rotate_block_y = true ;
+				if(dot(front,glm::vec3(0,0,0) - cuboid.center) > 0 ) rotate_block_d = -1 ;
+				else block_moving = 1 ;
+		}
 }
+}
+
+game_object w_tile;
 void checkfall()
 {
 		block_moving=0;
-		bool fall=true;
+		bool fall=true,block_at_edge=0;
 		int b=0;
 		for(auto &t:normal_floor)
 		{
@@ -1046,10 +1063,12 @@ void checkfall()
 				game_winning_time=glfwGetTime();
 				level_won=1;
 				block_falling=1;
+				w_tile.is_present=0;
 				return;
 		}
+	//	cout<<"b"<<b<<endl;
 		if(fall) lost=1,game_winning_time=glfwGetTime(),block_falling=1;
-		else if(fall && b==1)
+		else if(!fall && b==1)
 		{
 				shift_fall();
 		}
@@ -1112,9 +1131,12 @@ void make_floor(int level)
 		hidden_floor.resize(max_n/2);
 		game_object block,hblock,bblock,fblock;
 		block.object=createRectangle(Texture["live_block"]);
-		block.width=tilewidth;block.height=tileheight;block.length=tilelength;
-		block.scale=glm::vec3(block.width-del,block.length-del,block.height);
-		block.rotation_axis=glm::vec3(0,0,1);
+		w_tile.object=createRectangle(Texture["goal"]);
+		w_tile.width=block.width=tilewidth;
+		w_tile.height=block.height=tileheight;
+		w_tile.length=block.length=tilelength;
+		w_tile.scale=block.scale=glm::vec3(block.width-del,block.length-del,block.height);
+		w_tile.rotation_axis=block.rotation_axis=glm::vec3(0,0,1);
 		hblock.object=createRectangle(Texture["hidden_block"]);
 		bblock.object=createRectangle(Texture["button_block"]);
 		fblock.object=createRectangle(Texture["fragile"]);
@@ -1153,7 +1175,8 @@ void make_floor(int level)
 						else if(floor_plan[i][j]==-1)
 						{
 								win_tile = glm::vec3((i - floor_width/2)*tilewidth,(j - floor_length/2)*tilelength, -(tilelength + tilewidth)/2 - tileheight/2) ;
-
+								w_tile.center=win_tile;
+								w_tile.is_present=1;
 						}
 				}
 		}
@@ -1294,6 +1317,13 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 						}
 				}
 		}
+		if(w_tile.is_present)
+		{
+		Matrices.model = glm::translate(w_tile.center) * glm::scale(w_tile.scale);
+		MVP = VP * Matrices.model;
+		glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+		draw3DTexturedObject(w_tile.object);
+	}
 		//drawing cuboid
 		if(block_cam_view==0)
 		{
@@ -1349,6 +1379,19 @@ void set_textures()
 		Texture["fragile"]=createTexture("Images/fragile.jpg");
 		Texture["cuboid"]=createTexture("Images/block.jpg");
 		Texture["sky"]=createTexture("Images/sky.jpg");
+		Texture["1"]=createTexture("Images/1s.png");
+		Texture["2"]=createTexture("Images/2s.png");
+		Texture["Level1"]=createTexture("Images/1.png");
+		Texture["Level2"]=createTexture("Images/2.png");
+		Texture["3"]=createTexture("Images/3.png");
+		Texture["4"]=createTexture("Images/4.png");
+		Texture["5"]=createTexture("Images/5.png");
+		Texture["6"]=createTexture("Images/6.png");
+		Texture["7"]=createTexture("Images/7.png");
+		Texture["8"]=createTexture("Images/8.png");
+		Texture["9"]=createTexture("Images/9.png");
+		Texture["0"]=createTexture("Images/0.png");
+		Texture["goal"]=createTexture("Images/goal.png");
 }
 /* Initialize the OpenGL rendering properties */
 /* Add all the models to be created here */
@@ -1361,10 +1404,6 @@ void initGL (GLFWwindow* window, int width, int height)
 		// Get a handle for our "MVP" uniform
 		Matrices.TexMatrixID = glGetUniformLocation(textureProgramID, "MVP");
 		set_textures();
-
-
-		GLint textureID5 = createTexture("Images/middle.jpg");
-		createRectangle (textureID5);
 		block_last_pos.push(glm::vec3(1,0,0));
 		skyline_box();
 		create_cuboid();
@@ -1409,7 +1448,7 @@ int main (int argc, char** argv)
 				srand(glfwGetTime()) ;
 				last_update_time = current_time;
 				draw(window, 0, 0, 1, 1, 1, 1, 1);
-
+			//	draw2(window,0.75,0.75,0.25,0.25);
 				// Swap Frame Buffer in double buffering
 				glfwSwapBuffers(window);
 
