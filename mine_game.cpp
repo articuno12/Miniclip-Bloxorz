@@ -538,11 +538,11 @@ float currentBlockHeight(void);
 
 void block_view()
 {
-Camera.center = cuboid.center + glm::vec3(0,0,1) * (currentBlockHeight()) ;
-    Camera.angle = normalize(cuboid.center - block_last_pos.front() )   + cuboid.center ;
-    Camera.up = normalize(glm::vec3(0,0,1) - (Camera.angle - Camera.center) * dot(glm::vec3(0,0,1),(Camera.angle - Camera.center))) ;
-    update_Camera() ;
-	}
+		Camera.center = cuboid.center + glm::vec3(0,0,1) * (currentBlockHeight()) ;
+		Camera.angle = normalize(cuboid.center - block_last_pos.front() )   + cuboid.center ;
+		Camera.up = normalize(glm::vec3(0,0,1) - (Camera.angle - Camera.center) * dot(glm::vec3(0,0,1),(Camera.angle - Camera.center))) ;
+		update_Camera() ;
+}
 //* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -633,17 +633,17 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
 						top_view();
 						break;
 				case 'o':
-				block_cam_view=mousefollow=0;
+						block_cam_view=mousefollow=0;
 						tower_view();
 						break;
 				case 's':
-							block_cam_view=0;
+						block_cam_view=0;
 						mousefollow=1;
 						break;
 				case 'b':
-							mousefollow=0;
-							block_cam_view=1;
-							break;
+						mousefollow=0;
+						block_cam_view=1;
+						break;
 				default:
 						break;
 		}
@@ -669,9 +669,9 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods)
 void mousescroll(GLFWwindow* window, double xoffset, double yoffset)
 {
 		if(yoffset==-1)
-			set_camera_radius(1);
-			else
-			set_camera_radius(-1);
+				set_camera_radius(1);
+		else
+				set_camera_radius(-1);
 }
 
 
@@ -985,30 +985,30 @@ void move_block_v(float d)
 }
 void shift_fall(void)
 {
-	bool BlockAtEdge=0;
-	glm::vec3 C1 = cuboid.center - cuboid.up * ((tilelength + tilewidth)/4) ;
-glm::vec3 C2 = cuboid.center + cuboid.up * ((tilelength + tilewidth)/4) ;
-if((C2.x/tilelength + floor_length/2) > (floor_length - 1) ||(C2.x/tilelength + floor_length/2)<0|| (C2.y/tilewidth + floor_width/2) > (floor_width - 1) || (C2.y/tilewidth + floor_width/2)<0) BlockAtEdge = true ;
-if((C1.x/tilelength + floor_length/2) > (floor_length - 1)  || (C1.x/tilelength + floor_length/2)<0|| (C1.y/tilewidth + floor_width/2) > (floor_width - 1) || (C1.y/tilewidth + floor_width/2)<0) BlockAtEdge = true ;
-// Block at the edge.! Block Must fall
-if(BlockAtEdge)
-{
-		glm::vec3 right = RightOfBlock() , front = FrontOfBlock() ;
-		if(abs(dot(cuboid.up,right)) > 0.98)
+		bool BlockAtEdge=0;
+		glm::vec3 C1 = cuboid.center - cuboid.up * ((tilelength + tilewidth)/4) ;
+		glm::vec3 C2 = cuboid.center + cuboid.up * ((tilelength + tilewidth)/4) ;
+		if((C2.x/tilelength + floor_length/2) > (floor_length - 1) ||(C2.x/tilelength + floor_length/2)<0|| (C2.y/tilewidth + floor_width/2) > (floor_width - 1) || (C2.y/tilewidth + floor_width/2)<0) BlockAtEdge = true ;
+		if((C1.x/tilelength + floor_length/2) > (floor_length - 1)  || (C1.x/tilelength + floor_length/2)<0|| (C1.y/tilewidth + floor_width/2) > (floor_width - 1) || (C1.y/tilewidth + floor_width/2)<0) BlockAtEdge = true ;
+		// Block at the edge.! Block Must fall
+		if(BlockAtEdge)
 		{
-				//cout<<"Force Moving along H"<<endl ;
-				 rotate_block_h = true ;
-				if(dot(right,glm::vec3(0,0,0) - cuboid.center) > 0 ) rotate_block_d = -1 ;
-				else block_moving = 1 ;
+				glm::vec3 right = RightOfBlock() , front = FrontOfBlock() ;
+				if(abs(dot(cuboid.up,right)) > 0.98)
+				{
+						//cout<<"Force Moving along H"<<endl ;
+						rotate_block_h = true ;
+						if(dot(right,glm::vec3(0,0,0) - cuboid.center) > 0 ) rotate_block_d = -1 ;
+						else block_moving = 1 ;
+				}
+				else
+				{
+						//cout<<"Force Moving along V"<<endl ;
+						rotate_block_y = true ;
+						if(dot(front,glm::vec3(0,0,0) - cuboid.center) > 0 ) rotate_block_d = -1 ;
+						else block_moving = 1 ;
+				}
 		}
-		else
-		{
-				//cout<<"Force Moving along V"<<endl ;
-				rotate_block_y = true ;
-				if(dot(front,glm::vec3(0,0,0) - cuboid.center) > 0 ) rotate_block_d = -1 ;
-				else block_moving = 1 ;
-		}
-}
 }
 
 game_object w_tile;
@@ -1066,7 +1066,7 @@ void checkfall()
 				w_tile.is_present=0;
 				return;
 		}
-	//	cout<<"b"<<b<<endl;
+		//	cout<<"b"<<b<<endl;
 		if(fall) lost=1,game_winning_time=glfwGetTime(),block_falling=1;
 		else if(!fall && b==1)
 		{
@@ -1319,20 +1319,20 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 		}
 		if(w_tile.is_present)
 		{
-		Matrices.model = glm::translate(w_tile.center) * glm::scale(w_tile.scale);
-		MVP = VP * Matrices.model;
-		glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-		draw3DTexturedObject(w_tile.object);
-	}
+				Matrices.model = glm::translate(w_tile.center) * glm::scale(w_tile.scale);
+				MVP = VP * Matrices.model;
+				glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+				draw3DTexturedObject(w_tile.object);
+		}
 		//drawing cuboid
 		if(block_cam_view==0)
 		{
-		Matrices.model = Rotatecuboid(cuboid.angle,normalize(cross(cuboid.up,cuboid.angle)),cuboid.up) * glm::scale(cuboid.scale);
-		Matrices.model = glm::translate(cuboid.center)* Matrices.model ;
-		MVP = VP * Matrices.model;
-		glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-		draw3DTexturedObject(cuboid.object);
-	}
+				Matrices.model = Rotatecuboid(cuboid.angle,normalize(cross(cuboid.up,cuboid.angle)),cuboid.up) * glm::scale(cuboid.scale);
+				Matrices.model = glm::translate(cuboid.center)* Matrices.model ;
+				MVP = VP * Matrices.model;
+				glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+				draw3DTexturedObject(cuboid.object);
+		}
 }
 
 /* Initialise glfw window, I/O callbacks and the renderer to use */
@@ -1448,7 +1448,7 @@ int main (int argc, char** argv)
 				srand(glfwGetTime()) ;
 				last_update_time = current_time;
 				draw(window, 0, 0, 1, 1, 1, 1, 1);
-			//	draw2(window,0.75,0.75,0.25,0.25);
+				//	draw2(window,0.75,0.75,0.25,0.25);
 				// Swap Frame Buffer in double buffering
 				glfwSwapBuffers(window);
 
