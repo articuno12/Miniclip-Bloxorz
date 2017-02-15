@@ -119,6 +119,7 @@ bool update_block_h=false;
 bool rotate_block_h=false;
 bool rotate_block_y=false;
 bool update_block_y=false;
+bool block_cam_view=0;
 float rotate_block_d;
 bool block_moving=false,block_falling=false;
 int block_rotating_degree=6;
@@ -532,6 +533,15 @@ void mousefollow_view()
 		Camera.up = normalize(glm::vec3(0,0,1) - (d) * dot(glm::vec3(0,0,1),d)) ;
 		update_Camera();
 }
+//just declaration
+float currentBlockHeight(void);
+void block_view()
+{
+Camera.center = cuboid.center + glm::vec3(0,0,1) * (currentBlockHeight()) ;
+    Camera.angle = normalize(cuboid.center - block_last_pos.front() )   + cuboid.center ;
+    Camera.up = normalize(glm::vec3(0,0,1) - (Camera.angle - Camera.center) * dot(glm::vec3(0,0,1),(Camera.angle - Camera.center))) ;
+    update_Camera() ;
+	}
 //* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -618,13 +628,21 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
 						set_camera_radius(-1);
 						break;
 				case 't':
+						block_cam_view=mousefollow=0;
 						top_view();
 						break;
 				case 'o':
+				block_cam_view=mousefollow=0;
 						tower_view();
 						break;
 				case 's':
+							block_cam_view=0;
 						mousefollow=1;
+						break;
+				case 'b':
+							mousefollow=0;
+							block_cam_view=1;
+							break;
 				default:
 						break;
 		}
@@ -637,7 +655,7 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods)
 				case GLFW_MOUSE_BUTTON_LEFT:
 						if (action == GLFW_PRESS)
 						{
-								mousefollow=0;
+								block_cam_view=mousefollow=0;
 								helicam=1;
 								mouse_previous=GetMouseCoordinates();
 						}
@@ -1221,6 +1239,7 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 		glUniform1i(glGetUniformLocation(textureProgramID, "texSampler"), 0);
 		if(helicam) helicam_view();
 		else if(mousefollow) mousefollow_view();
+		else if(block_cam_view) block_view();
 		if(block_moving) checkfall();
 		if(block_falling) blockfall();
 		if(rotate_block_h) move_block_h(rotate_block_d);
@@ -1276,11 +1295,14 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 				}
 		}
 		//drawing cuboid
+		if(block_cam_view==0)
+		{
 		Matrices.model = Rotatecuboid(cuboid.angle,normalize(cross(cuboid.up,cuboid.angle)),cuboid.up) * glm::scale(cuboid.scale);
 		Matrices.model = glm::translate(cuboid.center)* Matrices.model ;
 		MVP = VP * Matrices.model;
 		glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 		draw3DTexturedObject(cuboid.object);
+	}
 }
 
 /* Initialise glfw window, I/O callbacks and the renderer to use */
