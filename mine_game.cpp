@@ -132,7 +132,7 @@ GLFWwindow* window;
 queue<glm::vec3> block_last_pos;
 
 glm::vec3 win_tile=glm::vec3(0,0,0);
-bool game_won=0,lost=0;
+bool game_won=0,lost=0,start=0;
 double game_winning_time;
 int Level=1;
 /* Function to load Shaders - Use it as it is */
@@ -973,17 +973,21 @@ void move_block_v(float d)
 				block_moving=1;
 		}
 }
+void shift_fall(void)
+{
 
+}
 void checkfall()
 {
 		block_moving=0;
 		bool fall=true;
+		int b=0;
 		for(auto &t:normal_floor)
 		{
 				if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
 				{
 						fall=0;
-						break;
+						b++;
 				}
 		}
 		for(auto &t:fragile_floor)
@@ -991,7 +995,7 @@ void checkfall()
 				if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
 				{
 						if(currentBlockHeight()==(tilewidth+tilelength)) fall=true,t.is_present=0;
-						else fall=0;
+						else fall=0,b++;
 						break;
 				}
 		}
@@ -1000,7 +1004,7 @@ void checkfall()
 				if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
 				{
 						fall=0;
-
+						b++;
 						int i=(int)( roundoff(t.center.x)/tilewidth + floor_width/2);
 						int j= (int)(roundoff(t.center.y)/tilelength + floor_length/2);
 						auto b = buttons.find(mp(i,j));
@@ -1016,7 +1020,7 @@ void checkfall()
 		{
 				for(auto &t:hidden_floor[i])
 						if(abs(t.center.x - cuboid.center.x)<=tilewidth/2 && abs(t.center.y - cuboid.center.y)<=tilelength/2)
-								fall=0;
+								fall=0,b++;
 		}
 		if(abs(win_tile.x - cuboid.center.x)<=tilewidth/2 && abs(win_tile.y - cuboid.center.y)<=tilelength/2 && fall)
 		{
@@ -1026,7 +1030,11 @@ void checkfall()
 				game_won=1;
 				fall=1;
 		}
-		if(fall) block_falling=1;
+		if(fall && b==0) block_falling=1;
+		else if(fall && b==1)
+		{
+			shift_fall();
+		}
 }
 void blockfall()
 {
@@ -1069,6 +1077,7 @@ void make_floor(int level)
 		normal_floor.clear(),hidden_floor.clear(),button_floor.clear();fragile_floor.clear();
 		button_record.clear(); buttons.clear();
 		game_won=0;
+		start=1;
 		vector<vector<int> > floor_plan; floor_plan=read_floor(level);
 		float del=0.06;
 		int max_n=0;
@@ -1198,6 +1207,7 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 				MVP = VP * Matrices.model;
 				glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 				draw3DTexturedObject(it.object);
+
 		}
 		for(auto &it:button_floor)
 		{
@@ -1277,8 +1287,8 @@ void set_textures()
 		Texture["hidden_block"]=createTexture("Images/hidden_block.jpg");
 		Texture["button_block"]=createTexture("Images/button_floor.jpg");
 		Texture["fragile"]=createTexture("Images/fragile.jpg");
-		Texture["cuboid"]=createTexture("Images/middle1.png");
-		Texture["sky"]=createTexture("Images/sky.png");
+		Texture["cuboid"]=createTexture("Images/block.jpg");
+		Texture["sky"]=createTexture("Images/sky.jpg");
 }
 /* Initialize the OpenGL rendering properties */
 /* Add all the models to be created here */
