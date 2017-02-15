@@ -190,10 +190,10 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 		glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
 		std::vector<char> FragmentShaderErrorMessage( max(InfoLogLength, int(1)) );
 		glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
-	//	cout << FragmentShaderErrorMessage.data() << endl;
+		//	cout << FragmentShaderErrorMessage.data() << endl;
 
 		// Link the program
-	//	cout << "Linking program" << endl;
+		//	cout << "Linking program" << endl;
 		GLuint ProgramID = glCreateProgram();
 		glAttachShader(ProgramID, VertexShaderID);
 		glAttachShader(ProgramID, FragmentShaderID);
@@ -1033,7 +1033,7 @@ void checkfall()
 		if(fall) lost=1,game_winning_time=glfwGetTime(),block_falling=1;
 		else if(fall && b==1)
 		{
-			shift_fall();
+				shift_fall();
 		}
 }
 void blockfall()
@@ -1076,9 +1076,9 @@ void make_floor(int level)
 {
 		if(Level==2)
 		{
-			cout<<"GAME_WON"<<endl;
-			pthread_join(Writer_thr[1],NULL);
-			exit(0);
+				cout<<"GAME_WON"<<endl;
+				pthread_join(Writer_thr[1],NULL);
+				exit(0);
 		}
 		normal_floor.clear(),hidden_floor.clear(),button_floor.clear();fragile_floor.clear();
 		button_record.clear(); buttons.clear();
@@ -1168,8 +1168,8 @@ void skyline_box()
 
 void SetGame(void)
 {
-    while(!block_last_pos.empty()) block_last_pos.pop();
-    block_last_pos.push(glm::vec3(1,0,0)) ;
+		while(!block_last_pos.empty()) block_last_pos.pop();
+		block_last_pos.push(glm::vec3(1,0,0)) ;
 		win_tile=glm::vec3(0,0,0);
 		update_block_h=false;
 		rotate_block_h=false;
@@ -1177,26 +1177,26 @@ void SetGame(void)
 		update_block_y=false;
 		block_moving=false,block_falling=false;
 		set_Camera();
-    make_floor(Level);
-    create_cuboid() ;
+		make_floor(Level);
+		create_cuboid() ;
 }
 
 void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int doV, int doP)
 {
-	if(current_time - game_winning_time > 5 && level_won)
-	{
-			block_falling = false ;
-			level_won = false ;
-			++Level ;
-			steps=0;
-			SetGame() ;
-	}
-	else if(current_time - game_winning_time > 5 && lost==1)
-	{
-		cout<<"YOU LOSE "<<endl;
-		pthread_join(Writer_thr[1],NULL);
-		exit(0);
-	}
+		if(current_time - game_winning_time > 5 && level_won)
+		{
+				block_falling = false ;
+				level_won = false ;
+				++Level ;
+				steps=0;
+				SetGame() ;
+		}
+		else if(current_time - game_winning_time > 5 && lost==1)
+		{
+				cout<<"YOU LOSE "<<endl;
+				pthread_join(Writer_thr[1],NULL);
+				exit(0);
+		}
 		int fbwidth, fbheight;
 		glfwGetFramebufferSize(window, &fbwidth, &fbheight);
 		glViewport((int)(x*fbwidth), (int)(y*fbheight), (int)(w*fbwidth), (int)(h*fbheight));
@@ -1290,7 +1290,7 @@ GLFWwindow* initGLFW (int width, int height){
 
 		glfwSetErrorCallback(error_callback);
 		if (!glfwInit()) {
-			pthread_join(Writer_thr[1],NULL);
+				pthread_join(Writer_thr[1],NULL);
 				exit(EXIT_FAILURE);
 		}
 
