@@ -130,7 +130,8 @@ pthread_t Writer_thr[3];
 bool helicam=0,mousefollow=0;
 GLFWwindow* window;
 queue<glm::vec3> block_last_pos;
-
+float ScreenWidth=600;
+float ScreenHeight=600;
 glm::vec3 win_tile=glm::vec3(0,0,0);
 bool level_won=0,lost=0,start=0;
 double game_winning_time;
@@ -543,6 +544,27 @@ void block_view()
 		Camera.up = normalize(glm::vec3(0,0,1) - (Camera.angle - Camera.center) * dot(glm::vec3(0,0,1),(Camera.angle - Camera.center))) ;
 		update_Camera() ;
 }
+//just declaration
+glm::vec3 GetMouseCoordinates(void);
+
+void mouse_control(GLFWwindow *window)
+{
+	glm::vec3 Mouse = GetMouseCoordinates() ;
+	glm::vec3 c = glm::project(glm::vec3(0,0,0),Matrices.view,Matrices.projection,glm::vec4(0,0,ScreenWidth,ScreenHeight))  ;
+	glm::vec3 d = normalize(Mouse - c) ;
+	if(abs(dot(d,glm::vec3(1,0,0))) > abs(dot(d,glm::vec3(0,1,0))))
+	{
+			rotate_block_h = true ;
+			if(d.x > 0) rotate_block_d = 1 ;
+			if(d.x < 0) rotate_block_d = -1 ;
+		}
+		else
+		{
+			rotate_block_y = true ;
+			if(d.y > 0) rotate_block_d = -1 ;
+			if(d.y < 0) rotate_block_d = 1 ;
+		}
+}
 //* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -662,6 +684,9 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods)
 						}
 						else if (action == GLFW_RELEASE) helicam=0;
 						break;
+						case GLFW_MOUSE_BUTTON_RIGHT :
+		        if(action == GLFW_PRESS && !rotate_block_h && !rotate_block_y && !block_falling) mouse_control(window) ;
+		        break ;
 				default:
 						break;
 		}
@@ -1059,12 +1084,16 @@ void checkfall()
 		}
 		if(abs(win_tile.x - cuboid.center.x)<=tilewidth/2 && abs(win_tile.y - cuboid.center.y)<=tilelength/2 && fall)
 		{
+				if(currentBlockHeight()==tilewidth) b++;
+				else
+				{
 				cout<<"Level WON !!"<<endl;
 				game_winning_time=glfwGetTime();
 				level_won=1;
 				block_falling=1;
 				w_tile.is_present=0;
 				return;
+			}
 		}
 		//	cout<<"b"<<b<<endl;
 		if(fall) lost=1,game_winning_time=glfwGetTime(),block_falling=1;
@@ -1272,6 +1301,7 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 		glUniformMatrix4fv(Matrices.TexMatrixID, 1, GL_FALSE, &MVP[0][0]);
 
 		cout<<"STEPS"<<" "<<steps<<endl;
+		cout<<"Levels"<<" "<<Level<<endl;
 		//skyline boxe
 
 		Matrices.model = glm::translate(sk.center) * glm::scale(sk.scale);
