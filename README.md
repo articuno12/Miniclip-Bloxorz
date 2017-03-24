@@ -48,8 +48,8 @@ be arranged in any manner.
   from a position in the sky. This gives a clear pic-ture of the path
 
 * ### Tower view
-Here, the camera is sitting on a tower, to the side of the plane of playing,
-observing it at an angle.
+  Here, the camera is sitting on a tower, to the side of the plane of playing,
+  observing it at an angle.
 
 * ### Follow Cam view
   This is a view of the block and the region in front of it from a location
@@ -62,3 +62,17 @@ observing it at an angle.
   away from the scene.
 
 # Controls
+* Move left : LEFT ARROW KEY
+* Move Right : RIGHT ARROW KEY
+* Up Left    : UP ARROW KEY
+* Up Down    : DOWN ARROW KEY
+* Pause game : p
+* quit game  : q
+* top view   : t
+* tower view : o
+* Follow cam view : b
+* Helicopter Cam View : s
+* zoom in    : n
+* zoom out   : f
+* Rotate camera vertically : v
+* Rotate camera horizontally : m
