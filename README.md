@@ -60,7 +60,7 @@ be arranged in any manner.
   Clicking and dragging should change the look angle, the up vector should
   remain up always, and the scroll wheel will move the camera closer or farther
   away from the scene.
-
+ 
 # Controls
 * Move left : LEFT ARROW KEY
 * Move Right : RIGHT ARROW KEY
@@ -76,3 +76,6 @@ be arranged in any manner.
 * zoom out   : f
 * Rotate camera vertically : v
 * Rotate camera horizontally : m
+
+# Preview
+  ![Alt Text](https://github.com/articuno12/Miniclip-Bloxorz/raw/master/optimised.gif)
